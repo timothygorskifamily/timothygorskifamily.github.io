@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Strategy Analyzer Prototype</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <style>
+        :root { --primary: #0f172a; --accent: #3b82f6; --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #334155; margin: 0; padding: 20px; }
+        .container { max-width: 1400px; margin: auto; background: var(--card); padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+        
+        .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--border); padding-bottom: 20px; margin-bottom: 25px; }
+        h1 { margin: 0; font-size: 1.8rem; color: var(--primary); letter-spacing: -0.5px; }
+        .sub { font-size: 0.95rem; color: #64748b; margin-top: 5px; font-weight: 500; }
+        .proto-badge { background: #fef3c7; color: #b45309; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-left: 15px; vertical-align: middle; }
+        
+        .net-badge { background: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; display: inline-block; margin-right: 10px; }
+        .gross-badge { background: #f1f5f9; color: #64748b; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; display: inline-block; margin-right: 10px; }
+
+        .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 30px; }
+        .kpi { background: #f1f5f9; padding: 15px; border-radius: 12px; border: 1px solid var(--border); text-align: center; display: flex; flex-direction: column; justify-content: center; }
+        .kpi.highlight { background: var(--primary); color: white; border: none; }
+        .kpi.highlight .kpi-lbl { color: #94a3b8; }
+        .kpi-val { font-size: 1.3rem; font-weight: 800; margin: 5px 0; }
+        .kpi-subval { font-size: 0.85rem; font-weight: 600; opacity: 0.9; }
+        .kpi-lbl { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: #64748b; }
+        
+        .dashboard { display: grid; grid-template-columns: 300px 1fr; gap: 30px; }
+        .controls { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 20px; height: fit-content; }
+        
+        .fee-section { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-top: 20px; margin-bottom: 20px; }
+        .fee-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .fee-title { font-weight: 700; font-size: 0.9rem; color: #334155; }
+        
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(18px); }
+
+        .status-box { padding: 10px; margin-bottom: 15px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; text-align: center; }
+        .status-loading { background: #e0f2fe; color: #0284c7; }
+        .status-error { background: #fee2e2; color: #dc2626; }
+        .status-success { background: #dcfce7; color: #166534; }
+
+        .inp-grp { margin-bottom: 20px; }
+        .inp-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .inp-grp label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; }
+        .inp-val { font-size: 0.85rem; font-weight: 700; color: var(--accent); }
+        
+        select { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600; background: white; }
+        input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; margin-top: -6px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #e2e8f0; border-radius: 2px; }
+        input[type=number], input[type=date] { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; font-weight: 600; box-sizing: border-box; }
+
+        .btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .btn:hover { background: #334155; }
+
+        .chart-container { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; position: relative; height: 600px; }
+        .tab-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tab-btn { padding: 8px 16px; border: 1px solid var(--border); background: white; border-radius: 20px; cursor: pointer; font-weight: 600; color: #64748b; font-size: 0.9rem; }
+        .tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+        .chart-tools { position: absolute; top: 15px; right: 15px; z-index: 10; }
+        .btn-mini { background: rgba(255,255,255,0.9); border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: #475569; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 0.9rem; }
+        th { text-align: right; padding: 12px; background: #f8fafc; color: #64748b; font-weight: 600; border-bottom: 2px solid var(--border); }
+        th:first-child { text-align: left; }
+        td { padding: 12px; text-align: right; border-bottom: 1px solid var(--border); font-family: 'SF Mono', monospace; }
+        td:first-child { text-align: left; font-family: inherit; font-weight: 600; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div>
+            <h1>Portfolio Strategy Analyzer <span class="proto-badge">Prototype</span></h1>
+            <div class="sub">Total Return ETF vs Hedge Fund</div>
+        </div>
+        <div style="text-align:right">
+            <span id="displayBadge" class="gross-badge">Displaying: GROSS</span>
+            <div class="kpi-lbl" style="display:inline-block; text-align:right;">
+                Evaluation Date<br>
+                <input type="date" id="evalDate" value="2026-02-11" style="border:none; background:transparent; font-weight:700; font-size:1.1rem; text-align:right; font-family:inherit; cursor:pointer;" onchange="calc()">
+            </div>
+        </div>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi">
+            <div class="kpi-lbl">Your Capital</div>
+            <div class="kpi-val" id="kpiCap">$250k</div>
+        </div>
+        <div class="kpi" style="background:#f0fdf4; border-color:#bbf7d0;">
+            <div class="kpi-lbl" style="color:#166534;">Total Notional Exposure</div>
+            <div class="kpi-val" style="color:#15803d;" id="kpiNotional">$0</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-lbl">Current NAV</div>
+            <div class="kpi-val" id="kpiNav">$0</div>
+        </div>
+        <div class="kpi highlight">
+            <div class="kpi-lbl">Projected Value (10Y)</div>
+            <div class="kpi-val" id="kpiProj">$0</div>
+        </div>
+        
+        <div class="kpi" style="background:#f8fafc; border-color:#94a3b8;">
+            <div class="kpi-lbl">SPX ETF Return (10Y)</div>
+            <div class="kpi-val" id="kpiSpxRet">$0</div>
+        </div>
+        <div class="kpi" id="kpiAlphaBox" style="background:#f0f9ff; border-color:#bae6fd;">
+            <div class="kpi-lbl">Alpha (vs SPX ETF)</div>
+            <div class="kpi-val" id="kpiAlpha">$0</div>
+            <div class="kpi-subval" id="kpiAlphaPct">0.0%</div>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="controls">
+            <div id="statusBox" class="status-box status-loading">Loading portfolio.csv...</div>
+
+            <div class="inp-grp">
+                <label style="margin-bottom:8px;">Current SPX Spot Price</label>
+                <input type="number" id="inpSpot" value="564.15" step="0.01" onchange="calc()">
+            </div>
+
+            <div class="inp-grp">
+                <label style="margin-bottom:8px;">Investment Capital ($)</label>
+                <input type="number" id="inpInv" value="250000" step="10000" onchange="calc()">
+            </div>
+
+            <div class="fee-section">
+                <div class="fee-header">
+                    <span class="fee-title">FEES & NET RETURNS</span>
+                    <label class="switch">
+                        <input type="checkbox" id="checkFees" onchange="toggleFees()">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div id="feeControls" style="opacity:0.5; pointer-events:none; transition: opacity 0.3s;">
+                    <div class="inp-grp">
+                        <label>Carry Fee (Applied to Profit)</label>
+                        <select id="selCarry" onchange="calc()">
+                            <option value="0">0%</option>
+                            <option value="7">7%</option>
+                            <option value="10">10%</option>
+                            <option value="20" selected>20%</option>
+                        </select>
+                    </div>
+
+                    <div class="inp-grp" style="margin-bottom:0;">
+                        <div class="inp-header">
+                            <label>Management Fee (Annual)</label>
+                            <span class="inp-val" id="valMgmt">0.5%</span>
+                        </div>
+                        <input type="range" id="inpMgmt" min="0" max="2" step="0.5" value="0.5" oninput="updateVal('valMgmt', this.value); calc()">
+                    </div>
+                </div>
+            </div>
+
+            <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+
+            <div class="inp-grp">
+                <div class="inp-header">
+                    <label>S&P 500 Total Return</label>
+                    <span class="inp-val" id="valMkt">12%</span>
+                </div>
+                <input type="range" id="inpMkt" min="-10" max="50" step="0.5" value="12" oninput="updateVal('valMkt', this.value); calc()">
+            </div>
+
+            <div class="inp-grp">
+                <div class="inp-header">
+                    <label>S&P 500 Dividend Yield</label>
+                    <span class="inp-val" id="valDiv">1.1%</span>
+                </div>
+                <input type="range" id="inpDiv" min="0" max="10" step="0.1" value="1.1" oninput="updateVal('valDiv', this.value); calc()">
+            </div>
+
+            <div class="inp-grp">
+                <div class="inp-header">
+                    <label>Credit</label>
+                    <span class="inp-val" id="valBcred">9.5%</span>
+                </div>
+                <input type="range" id="inpBcred" min="0" max="50" step="0.5" value="9.5" oninput="updateVal('valBcred', this.value); calc()">
+            </div>
+
+            <div class="inp-grp">
+                <div class="inp-header">
+                    <label>Implied Volatility</label>
+                    <span class="inp-val" id="valVol">22%</span>
+                </div>
+                <div style="font-size:0.75rem; color:#64748b; margin-bottom:5px;">(just affects options pricing)</div>
+                <input type="range" id="inpVol" min="0" max="50" step="0.5" value="22" oninput="updateVal('valVol', this.value); calc()">
+            </div>
+            
+            <div style="margin-top:20px; font-size:0.8rem; color:#475569; line-height:1.6; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+                <strong style="color:var(--primary); display:block; margin-bottom:5px;">Definitions:</strong>
+                <ul style="margin:0; padding-left:20px;">
+                    <li><strong>NAV Value:</strong> Combined value of Credit + Options. (With Fees: Shows continuous net liquidation value).</li>
+                    <li><strong>Static Return:</strong> The theoretical <em>Intrinsic Value</em> of the option leg. Starts at $0 and grows to meet the full Option Value at maturity.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div>
+            <div class="tab-row">
+                <button class="tab-btn active" onclick="switchTab('wealth')" id="btnWealth">Wealth Growth ($)</button>
+                <button class="tab-btn" onclick="switchTab('pct')" id="btnPct">Relative Return (IRR)</button>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-tools">
+                    <button class="btn-mini" onclick="resetZoom()">Reset Zoom</button>
+                </div>
+                <canvas id="chartWealth"></canvas>
+                <canvas id="chartPct" style="display:none;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>Master Cost Basis</th>
+                <th>Master Current Value</th>
+                <th>Capital Invested</th>
+                <th>Notional Exposure</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+        <tfoot id="tableFoot" style="background:#f8fafc; font-weight:bold; border-top:2px solid #e2e8f0;"></tfoot>
+    </table>
+</div>
+
+<script>
+    // --- Global State ---
+    let PORTFOLIO = []; 
+    let TOTAL_MASTER_COST = 0;
+    
+    // Default Demo Data
+    const DEMO_DATA = [
+        { Type: 'Credit', CostBasis: 3489323.60, CurrentValue: 3489323.60, Strike: null, Quantity: null, ExpirationDate: null },
+        { Type: 'Option', CostBasis: 2699992.87, CurrentValue: 2309556.49, Strike: 563.22, Quantity: 24359, ExpirationDate: '2036-01-07' },
+        { Type: 'Option', CostBasis: 1100000.00, CurrentValue: 816926.67, Strike: 560.50, Quantity: 9512, ExpirationDate: '2036-01-30' }
+    ];
+
+    let chartWealth = null;
+    let chartPct = null;
+    let currentTab = 'wealth';
+
+    const fmt = (n) => new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 }).format(n);
+    function updateVal(id, val) { document.getElementById(id).innerText = val + "%"; }
+
+    function toggleFees() {
+        const checked = document.getElementById('checkFees').checked;
+        const panel = document.getElementById('feeControls');
+        const badge = document.getElementById('displayBadge');
+        
+        if (checked) {
+            panel.style.opacity = '1';
+            panel.style.pointerEvents = 'auto';
+            badge.innerText = 'Displaying: NET';
+            badge.className = 'net-badge';
+        } else {
+            panel.style.opacity = '0.5';
+            panel.style.pointerEvents = 'none';
+            badge.innerText = 'Displaying: GROSS';
+            badge.className = 'gross-badge';
+        }
+        calc();
+    }
+
+    function fetchPortfolio() {
+        const statusBox = document.getElementById('statusBox');
+        Papa.parse('portfolio.csv', {
+            download: true,
+            header: true,
+            dynamicTyping: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                if(results.data && results.data.length > 0) {
+                    processData(results.data);
+                    statusBox.className = 'status-box status-success';
+                    statusBox.innerText = '✅ Loaded portfolio.csv';
+                } else { useDemoData(); }
+            },
+            error: function() { useDemoData(); }
+        });
+    }
+
+    function useDemoData() {
+        const statusBox = document.getElementById('statusBox');
+        statusBox.className = 'status-box status-error';
+        statusBox.innerText = '⚠️ CSV Not Found. Using Demo Data.';
+        processData(DEMO_DATA);
+    }
+
+    function processData(rawData) {
+        PORTFOLIO = rawData.filter(row => row.Type && row.CostBasis).map(row => ({
+            Type: row.Type,
+            CostBasis: parseFloat(row.CostBasis),
+            CurrentValue: parseFloat(row.CurrentValue),
+            Strike: row.Strike ? parseFloat(row.Strike) : null,
+            Quantity: row.Quantity ? parseFloat(row.Quantity) : null,
+            ExpirationDate: row.ExpirationDate
+        }));
+        calc();
+    }
+
+    function N(z) {
+        const b1=0.319381530, b2=-0.356563782, b3=1.781477937, b4=-1.821255978, b5=1.330274429, p=0.2316419, c=0.39894228;
+        if(z>6.0) return 1.0; if(z<-6.0) return 0.0;
+        const a=Math.abs(z), t=1.0/(1.0+a*p), b=c*Math.exp((-z*z)/2.0);
+        let n=((((b5*t+b4)*t+b3)*t+b2)*t+b1)*t;
+        n=1.0-b*n; return z<0.0 ? 1.0-n : n;
+    }
+    function bsPrice(S, K, T, r, v) {
+        if (T <= 0) return Math.max(0, S - K);
+        const d1 = (Math.log(S/K) + (0.5*v*v)*T) / (v*Math.sqrt(T));
+        const d2 = d1 - v*Math.sqrt(T);
+        return Math.exp(-r*T) * (S*N(d1) - K*N(d2)); 
+    }
+
+    function calc() {
+        if(!PORTFOLIO.length) return;
+
+        const inv = parseFloat(document.getElementById('inpInv').value);
+        const spot = parseFloat(document.getElementById('inpSpot').value);
+        const evalDateStr = document.getElementById('evalDate').value;
+        const evalDate = new Date(evalDateStr);
+
+        const gTotal = parseFloat(document.getElementById('inpMkt').value)/100;
+        const gDiv = parseFloat(document.getElementById('inpDiv').value)/100;
+        const gPrice = gTotal - gDiv; 
+
+        const gBcred = parseFloat(document.getElementById('inpBcred').value)/100;
+        const vol = parseFloat(document.getElementById('inpVol').value)/100;
+        const r = 0.04; 
+
+        // Fees
+        const useFees = document.getElementById('checkFees').checked;
+        const carryPct = parseFloat(document.getElementById('selCarry').value)/100;
+        const mgmtPct = parseFloat(document.getElementById('inpMgmt').value)/100;
+
+        // Master Data Aggregation
+        let mCostCredit = 0, mValCredit = 0;
+        let mCostOpt = 0, mValOpt = 0;
+        let mNotionalOpt = 0;
+
+        PORTFOLIO.forEach(row => {
+            if(row.Type === 'Credit') {
+                mCostCredit += row.CostBasis;
+                mValCredit += row.CurrentValue;
+            } else if (row.Type === 'Option') {
+                mCostOpt += row.CostBasis;
+                mValOpt += row.CurrentValue;
+                mNotionalOpt += (row.Quantity * spot);
+            }
+        });
+
+        TOTAL_MASTER_COST = mCostCredit + mCostOpt;
+        const ratio = inv / TOTAL_MASTER_COST;
+
+        const uValCredit = mValCredit * ratio;
+        const uCostCredit = mCostCredit * ratio;
+        const uValOpt = mValOpt * ratio;
+        const uCostOpt = mCostOpt * ratio;
+        
+        const uNotionalOpt = mNotionalOpt * ratio;
+        const uNotionalTotal = uNotionalOpt + uValCredit;
+        const optionsLeverage = uNotionalOpt / uCostOpt; 
+
+        const navInit = uValCredit + uValOpt;
+
+        // KPI & Table
+        document.getElementById('kpiCap').innerText = fmt(inv);
+        document.getElementById('kpiNotional').innerText = fmt(uNotionalTotal);
+        document.getElementById('kpiNav').innerText = fmt(navInit);
+
+        document.getElementById('tableBody').innerHTML = `
+            <tr>
+                <td>Credit</td>
+                <td>${fmt(mCostCredit)}</td>
+                <td>${fmt(mValCredit)}</td>
+                <td>${fmt(uCostCredit)}</td>
+                <td>${fmt(uValCredit)}</td>
+            </tr>
+            <tr>
+                <td>SPXFP Options</td>
+                <td>${fmt(mCostOpt)}</td>
+                <td>${fmt(mValOpt)}</td>
+                <td>${fmt(uCostOpt)}</td>
+                <td style="font-weight:bold; color:#3b82f6;">${fmt(uNotionalOpt)}</td>
+            </tr>
+        `;
+        document.getElementById('tableFoot').innerHTML = `
+            <tr>
+                <td>TOTAL</td>
+                <td>${fmt(TOTAL_MASTER_COST)}</td>
+                <td>${fmt(mValCredit + mValOpt)}</td>
+                <td>${fmt(inv)}</td>
+                <td>${fmt(uNotionalTotal)}</td>
+            </tr>
+        `;
+
+        // Projections
+        const labels = [];
+        const dPort = [], dBench = [], dStatic = [], dCredit = [], dOptions = [];
+        const pPort = [], pBench = [], pCredit = [], pOptions = [];
+
+        labels.push(evalDate);
+        
+        // Initial Calculation with Profit Check for Carry
+        let initialPort = navInit;
+        let initialCredit = uValCredit;
+        let initialOpt = uValOpt;
+        
+        // Apply carry to initial if already profitable (rare but possible in backdating)
+        if (useFees) {
+            const prof = initialPort - inv;
+            if (prof > 0) {
+                const carry = prof * carryPct;
+                initialPort -= carry;
+                // Pro-rate for components
+                const ratio = initialCredit / (initialCredit + initialOpt);
+                initialCredit -= (carry * ratio);
+                initialOpt -= (carry * (1-ratio));
+            }
+        }
+
+        dPort.push(initialPort);
+        dBench.push(inv);
+        dStatic.push(0); 
+        dCredit.push(initialCredit);
+        dOptions.push(initialOpt);
+
+        pPort.push((initialPort/inv - 1)*100);
+        pBench.push(0);
+        pCredit.push(0);
+        pOptions.push((initialOpt/uCostOpt - 1)*100);
+
+        for(let q=1; q<=40; q++) {
+            const t = q * 0.25;
+            const dt = new Date(evalDate); dt.setMonth(dt.getMonth() + q*3);
+            
+            const S_fut = spot * Math.pow(1+gPrice, t);
+            
+            // Gross Values
+            const valCreditGross = uValCredit * Math.pow(1+gBcred, t);
+            
+            let valOptGross = 0;
+            let valOptIntrinsic = 0; 
+
+            PORTFOLIO.filter(r => r.Type === 'Option').forEach(opt => {
+                const expDate = new Date(opt.ExpirationDate);
+                let T_rem = (expDate - dt) / (1000 * 60 * 60 * 24 * 365.25);
+                if (T_rem < 0) T_rem = 0;
+                
+                const price = bsPrice(S_fut, opt.Strike, T_rem, r, vol);
+                valOptGross += (price * opt.Quantity * ratio);
+
+                valOptIntrinsic += Math.max(0, S_fut - opt.Strike) * opt.Quantity * ratio;
+            });
+
+            const valPortGross = valCreditGross + valOptGross;
+
+            // Net Logic
+            let finalPort = valPortGross;
+            let finalCredit = valCreditGross;
+            let finalOpt = valOptGross;
+
+            if (useFees) {
+                // A. Management Fee (Compounding Annual Drag)
+                const mgmtDrag = Math.pow(1 - mgmtPct, t);
+                
+                finalCredit *= mgmtDrag;
+                finalOpt *= mgmtDrag;
+                finalPort = finalCredit + finalOpt;
+
+                // B. Carry (Performance Fee) - CONTINUOUS DEDUCTION FOR CHART
+                const profit = finalPort - inv;
+                if (profit > 0) {
+                    const carryAmt = profit * carryPct;
+                    finalPort -= carryAmt; // Net Liquidation Value at time t
+                    
+                    const creditShare = finalCredit / (finalCredit + finalOpt);
+                    finalCredit -= (carryAmt * creditShare);
+                    finalOpt -= (carryAmt * (1-creditShare));
+                }
+            }
+
+            const valBench = inv * Math.pow(1+gTotal, t);
+
+            labels.push(dt);
+            dPort.push(finalPort);
+            dBench.push(valBench);
+            dStatic.push(valOptIntrinsic);
+            dCredit.push(finalCredit);
+            dOptions.push(finalOpt);
+
+            pPort.push(((finalPort/inv)-1)*100);
+            pBench.push(((valBench/inv)-1)*100);
+            pCredit.push(((finalCredit/uValCredit)-1)*100);
+            pOptions.push(((finalOpt/uCostOpt)-1)*100);
+        }
+
+        // Final KPIs
+        const finalPort = dPort[dPort.length-1];
+        const finalBench = dBench[dBench.length-1];
+        const alpha = finalPort - finalBench;
+        const alphaPct = ((finalPort / finalBench) - 1) * 100;
+
+        document.getElementById('kpiProj').innerText = fmt(finalPort);
+        document.getElementById('kpiSpxRet').innerText = fmt(finalBench);
+        
+        const alphaBox = document.getElementById('kpiAlphaBox');
+        const alphaTxt = document.getElementById('kpiAlpha');
+        const alphaSub = document.getElementById('kpiAlphaPct');
+        
+        alphaTxt.innerText = (alpha >= 0 ? "+" : "") + fmt(alpha);
+        alphaSub.innerText = (alphaPct >= 0 ? "+" : "") + alphaPct.toFixed(1) + "%";
+
+        if (alpha >= 0) {
+            alphaBox.style.background = '#f0fdf4';
+            alphaBox.style.borderColor = '#bbf7d0';
+            alphaTxt.style.color = '#166534';
+            alphaSub.style.color = '#166534';
+        } else {
+            alphaBox.style.background = '#fef2f2';
+            alphaBox.style.borderColor = '#fecaca';
+            alphaTxt.style.color = '#dc2626';
+            alphaSub.style.color = '#dc2626';
+        }
+
+        renderWealthChart(labels, dPort, dBench, dStatic, dCredit, dOptions);
+        renderPctChart(labels, pPort, pBench, pCredit, pOptions);
+    }
+
+    // --- Charting ---
+    function renderWealthChart(lbl, port, bench, stat, cred, opts) {
+        const ctx = document.getElementById('chartWealth').getContext('2d');
+        if(chartWealth) chartWealth.destroy();
+        chartWealth = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: lbl,
+                datasets: [
+                    { label: 'NAV Value', data: port, borderColor: '#0f172a', backgroundColor: 'rgba(15, 23, 42, 0.05)', borderWidth: 3, fill: true, pointRadius: 0 },
+                    { label: 'S&P 500 ETF', data: bench, borderColor: '#94a3b8', borderWidth: 2, borderDash: [2, 2], pointRadius: 0 },
+                    { label: 'Static Return (Intrinsic)', data: stat, borderColor: '#9333ea', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, hidden: true },
+                    { label: 'Credit', data: cred, borderColor: '#10b981', borderWidth: 1.5, pointRadius: 0, hidden: true },
+                    { label: 'Options', data: opts, borderColor: '#ef4444', borderWidth: 1.5, pointRadius: 0, hidden: true }
+                ]
+            },
+            options: commonOptions('$')
+        });
+    }
+
+    function renderPctChart(lbl, port, bench, cred, opts) {
+        const ctx = document.getElementById('chartPct').getContext('2d');
+        if(chartPct) chartPct.destroy();
+        chartPct = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: lbl,
+                datasets: [
+                    { label: 'NAV Value', data: port, borderColor: '#0f172a', borderWidth: 3, pointRadius: 0 },
+                    { label: 'S&P 500 ETF', data: bench, borderColor: '#94a3b8', borderWidth: 2, borderDash: [2, 2], pointRadius: 0 },
+                    { label: 'Options', data: opts, borderColor: '#ef4444', borderWidth: 1.5, pointRadius: 0, hidden: true },
+                    { label: 'Credit', data: cred, borderColor: '#10b981', borderWidth: 1.5, pointRadius: 0, hidden: true }
+                ]
+            },
+            options: commonOptions('IRR')
+        });
+    }
+
+    function commonOptions(type) {
+        return {
+            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: { type: 'time', time: { unit: 'year' }, grid: { display: false } },
+                y: { ticks: { callback: (v) => type==='$' ? (v>=1000000 ? '$'+(v/1000000).toFixed(1)+'M' : '$'+(v/1000).toFixed(0)+'k') : v.toFixed(0)+'%' }, grid: { color: '#f1f5f9' } }
+            },
+            plugins: {
+                zoom: { zoom: { wheel: { enabled: true }, drag: { enabled: true, backgroundColor:'rgba(37, 99, 235, 0.1)' }, mode: 'x' } },
+                tooltip: { 
+                    backgroundColor: 'rgba(255,255,255,0.95)', titleColor: '#0f172a', bodyColor: '#334155', borderColor: '#e2e8f0', borderWidth: 1, padding: 12, 
+                    callbacks: { 
+                        label: (c) => {
+                            let val = c.raw;
+                            if (type === 'IRR') {
+                                let t = c.dataIndex * 0.25;
+                                if(t <= 0) return ` ${c.dataset.label}: 0.0%`;
+                                let totalRet = 1 + (val/100);
+                                let irr = (Math.pow(totalRet, 1/t) - 1) * 100;
+                                return ` ${c.dataset.label}: ${irr.toFixed(1)}% (Ann)`;
+                            } else {
+                                return ` ${c.dataset.label}: ${fmt(val)}`;
+                            }
+                        }
+                    } 
+                },
+                legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } }
+            }
+        };
+    }
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('btnWealth').className = tab === 'wealth' ? 'tab-btn active' : 'tab-btn';
+        document.getElementById('btnPct').className = tab === 'pct' ? 'tab-btn active' : 'tab-btn';
+        document.getElementById('chartWealth').style.display = tab === 'wealth' ? 'block' : 'none';
+        document.getElementById('chartPct').style.display = tab === 'pct' ? 'block' : 'none';
+    }
+
+    function resetZoom() {
+        if(currentTab === 'wealth' && chartWealth) chartWealth.resetZoom();
+        if(currentTab === 'pct' && chartPct) chartPct.resetZoom();
+    }
+
+    window.onload = fetchPortfolio;
+</script>
+
+</body>
+</html>
