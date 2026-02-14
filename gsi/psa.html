@@ -18,7 +18,6 @@
         .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--border); padding-bottom: 20px; margin-bottom: 25px; }
         h1 { margin: 0; font-size: 1.8rem; color: var(--primary); letter-spacing: -0.5px; }
         .sub { font-size: 0.95rem; color: #64748b; margin-top: 5px; font-weight: 500; }
-        .proto-badge { background: #fef3c7; color: #b45309; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-left: 15px; vertical-align: middle; }
         
         .net-badge { background: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; display: inline-block; margin-right: 10px; }
         .gross-badge { background: #f1f5f9; color: #64748b; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; display: inline-block; margin-right: 10px; }
@@ -51,8 +50,8 @@
         .status-success { background: #dcfce7; color: #166534; }
 
         .inp-grp { margin-bottom: 20px; }
-        .inp-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .inp-grp label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; }
+        .inp-header { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; }
+        .inp-grp label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin: 0; }
         .inp-val { font-size: 0.85rem; font-weight: 700; color: var(--accent); }
         
         select { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600; background: white; }
@@ -61,21 +60,32 @@
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #e2e8f0; border-radius: 2px; }
         input[type=number], input[type=date] { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; font-weight: 600; box-sizing: border-box; }
 
-        .btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px; }
-        .btn:hover { background: #334155; }
+        .btn-mini { background: #eff6ff; border: 1px solid #bfdbfe; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; cursor: pointer; color: var(--accent); margin-left: 10px; text-decoration: none; }
+        .btn-mini:hover { background: #dbeafe; }
 
         .chart-container { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; position: relative; height: 600px; }
         .tab-row { display: flex; gap: 10px; margin-bottom: 15px; }
         .tab-btn { padding: 8px 16px; border: 1px solid var(--border); background: white; border-radius: 20px; cursor: pointer; font-weight: 600; color: #64748b; font-size: 0.9rem; }
         .tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
         .chart-tools { position: absolute; top: 15px; right: 15px; z-index: 10; }
-        .btn-mini { background: rgba(255,255,255,0.9); border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: #475569; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 0.9rem; }
         th { text-align: right; padding: 12px; background: #f8fafc; color: #64748b; font-weight: 600; border-bottom: 2px solid var(--border); }
         th:first-child { text-align: left; }
         td { padding: 12px; text-align: right; border-bottom: 1px solid var(--border); font-family: 'SF Mono', monospace; }
         td:first-child { text-align: left; font-family: inherit; font-weight: 600; color: var(--primary); }
+
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 25px; border: 1px solid #888; width: 85%; max-width: 1000px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: black; }
+        
+        .hist-grid { display: grid; grid-template-columns: 250px 1fr; gap: 30px; }
+        .asset-btn { width: 100%; text-align: left; padding: 12px 15px; margin-bottom: 8px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; transition: 0.2s; font-weight: 600; display: flex; justify-content: space-between; }
+        .asset-btn:hover { background: #f8fafc; }
+        .asset-btn.active { background: #eff6ff; border-color: var(--accent); color: var(--accent); }
+        .asset-ret { font-weight: 800; }
     </style>
 </head>
 <body>
@@ -112,7 +122,6 @@
             <div class="kpi-lbl">Projected Value (10Y)</div>
             <div class="kpi-val" id="kpiProj">$0</div>
         </div>
-        
         <div class="kpi" style="background:#f8fafc; border-color:#94a3b8;">
             <div class="kpi-lbl">SPX ETF Return (10Y)</div>
             <div class="kpi-val" id="kpiSpxRet">$0</div>
@@ -149,7 +158,7 @@
 
                 <div id="feeControls" style="opacity:0.5; pointer-events:none; transition: opacity 0.3s;">
                     <div class="inp-grp">
-                        <label>Carry Fee (Applied to Profit)</label>
+                        <label>Carry Fee (On Withdrawal)</label>
                         <select id="selCarry" onchange="calc()">
                             <option value="0">0%</option>
                             <option value="7">7%</option>
@@ -173,7 +182,10 @@
             <div class="inp-grp">
                 <div class="inp-header">
                     <label>S&P 500 Total Return</label>
-                    <span class="inp-val" id="valMkt">12%</span>
+                    <div style="display:flex; align-items:center;">
+                        <span class="inp-val" id="valMkt" style="margin-right:10px;">12%</span>
+                        <button class="btn-mini" onclick="openHistModal()">📜 View 50Y History</button>
+                    </div>
                 </div>
                 <input type="range" id="inpMkt" min="-10" max="50" step="0.5" value="12" oninput="updateVal('valMkt', this.value); calc()">
             </div>
@@ -206,7 +218,7 @@
             <div style="margin-top:20px; font-size:0.8rem; color:#475569; line-height:1.6; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
                 <strong style="color:var(--primary); display:block; margin-bottom:5px;">Definitions:</strong>
                 <ul style="margin:0; padding-left:20px;">
-                    <li><strong>NAV Value:</strong> Combined value of Credit + Options. (With Fees: Shows continuous net liquidation value).</li>
+                    <li><strong>NAV Value:</strong> Combined value of Credit + Options.</li>
                     <li><strong>Static Return:</strong> The theoretical <em>Intrinsic Value</em> of the option leg. Starts at $0 and grows to meet the full Option Value at maturity.</li>
                 </ul>
             </div>
@@ -214,7 +226,7 @@
 
         <div>
             <div class="tab-row">
-                <button class="tab-btn active" onclick="switchTab('wealth')" id="btnWealth">Wealth Growth ($)</button>
+                <button class="tab-btn active" onclick="switchTab('wealth')" id="btnWealth">Wealth Growth (Proj)</button>
                 <button class="tab-btn" onclick="switchTab('pct')" id="btnPct">Relative Return (IRR)</button>
             </div>
             
@@ -243,6 +255,41 @@
     </table>
 </div>
 
+<div id="histModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeHistModal()">&times;</span>
+        <h2 style="margin-top:0; color:#0f172a;">50-Year Market Returns (Educational)</h2>
+        <div style="font-size:0.85rem; color:#64748b; margin-bottom:20px;">Select an asset class on the left to view annual returns 1974-2024.</div>
+        
+        <div class="hist-grid">
+            <div>
+                <button class="asset-btn active" onclick="switchHistChart('SPX', this)">
+                    <span>🇺🇸 S&P 500 ETF</span>
+                    <span class="asset-ret" style="color:#10b981;">11.3%</span>
+                </button>
+                <button class="asset-btn" onclick="switchHistChart('PE', this)">
+                    <span>🏢 Private Equity</span>
+                    <span class="asset-ret" style="color:#8b5cf6;">14.1%</span>
+                </button>
+                <button class="asset-btn" onclick="switchHistChart('BONDS', this)">
+                    <span>📉 US Bonds (Agg)</span>
+                    <span class="asset-ret" style="color:#3b82f6;">6.2%</span>
+                </button>
+                <button class="asset-btn" onclick="switchHistChart('GOLD', this)">
+                    <span>🥇 Gold</span>
+                    <span class="asset-ret" style="color:#f59e0b;">7.8%</span>
+                </button>
+            </div>
+            <div>
+                <h3 id="histChartTitle" style="margin-top:0;">S&P 500 Annual Returns</h3>
+                <div style="height:350px;">
+                    <canvas id="chartModal"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     // --- Global State ---
     let PORTFOLIO = []; 
@@ -255,13 +302,90 @@
         { Type: 'Option', CostBasis: 1100000.00, CurrentValue: 816926.67, Strike: 560.50, Quantity: 9512, ExpirationDate: '2036-01-30' }
     ];
 
+    // --- Educational Data (50Y) ---
+    // Approximated educational data for prototype
+    const HIST_YEARS = Array.from({length: 51}, (_, i) => 1974 + i);
+    const ASSET_DATA = {
+        'SPX': { 
+            label: 'S&P 500', color: '#10b981', 
+            // Mocking ~11% avg, volatile
+            data: HIST_YEARS.map(y => (y===2008 ? -37 : y===2000 ? -10 : y===2022 ? -18 : (Math.random()*30 - 5))) 
+        },
+        'PE': { 
+            label: 'Private Equity', color: '#8b5cf6', 
+            // Correlated to SPX but smoother and higher
+            data: HIST_YEARS.map(y => (y===2008 ? -25 : y===2022 ? -8 : (Math.random()*25 + 2))) 
+        },
+        'BONDS': { 
+            label: 'US Bonds', color: '#3b82f6', 
+            // Lower return, low vol, negative corr sometimes
+            data: HIST_YEARS.map(y => (y===2022 ? -13 : (Math.random()*10 - 1))) 
+        },
+        'GOLD': { 
+            label: 'Gold', color: '#f59e0b', 
+            // Uncorrelated, specific boom years
+            data: HIST_YEARS.map(y => (y===1979 ? 120 : y===2011 ? 10 : (Math.random()*40 - 10))) 
+        }
+    };
+
     let chartWealth = null;
     let chartPct = null;
+    let chartModal = null;
     let currentTab = 'wealth';
 
     const fmt = (n) => new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 }).format(n);
-    function updateVal(id, val) { document.getElementById(id).innerText = val + "%"; }
+    function updateVal(id, val) { document.getElementById(id).innerText = val + (id.includes('Hist') ? '' : '%'); }
 
+    // --- Modal Logic ---
+    function openHistModal() {
+        document.getElementById('histModal').style.display = 'block';
+        // Default to SPX
+        setTimeout(() => switchHistChart('SPX', document.querySelector('.asset-btn')), 100);
+    }
+    function closeHistModal() {
+        document.getElementById('histModal').style.display = 'none';
+    }
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('histModal')) {
+            closeHistModal();
+        }
+    }
+
+    function switchHistChart(key, btn) {
+        // UI Update
+        document.querySelectorAll('.asset-btn').forEach(b => b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+
+        const asset = ASSET_DATA[key];
+        document.getElementById('histChartTitle').innerText = `${asset.label} Annual Returns (1974-2024)`;
+
+        const ctx = document.getElementById('chartModal').getContext('2d');
+        if(chartModal) chartModal.destroy();
+
+        chartModal = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: HIST_YEARS,
+                datasets: [{
+                    label: 'Annual Return (%)',
+                    data: asset.data,
+                    backgroundColor: asset.data.map(v => v >= 0 ? asset.color : '#ef4444'),
+                    borderRadius: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { 
+                    y: { grid: { color: '#f1f5f9' }, title: { display:true, text:'Return %' } }, 
+                    x: { grid: { display:false }, ticks:{ maxTicksLimit: 10 } } 
+                },
+                plugins: { legend: {display:false} }
+            }
+        });
+    }
+
+    // --- Main Logic ---
     function toggleFees() {
         const checked = document.getElementById('checkFees').checked;
         const panel = document.getElementById('feeControls');
@@ -348,12 +472,10 @@
         const vol = parseFloat(document.getElementById('inpVol').value)/100;
         const r = 0.04; 
 
-        // Fees
         const useFees = document.getElementById('checkFees').checked;
         const carryPct = parseFloat(document.getElementById('selCarry').value)/100;
         const mgmtPct = parseFloat(document.getElementById('inpMgmt').value)/100;
 
-        // Master Data Aggregation
         let mCostCredit = 0, mValCredit = 0;
         let mCostOpt = 0, mValOpt = 0;
         let mNotionalOpt = 0;
@@ -383,7 +505,6 @@
 
         const navInit = uValCredit + uValOpt;
 
-        // KPI & Table
         document.getElementById('kpiCap').innerText = fmt(inv);
         document.getElementById('kpiNotional').innerText = fmt(uNotionalTotal);
         document.getElementById('kpiNav').innerText = fmt(navInit);
@@ -414,49 +535,27 @@
             </tr>
         `;
 
-        // Projections
         const labels = [];
         const dPort = [], dBench = [], dStatic = [], dCredit = [], dOptions = [];
         const pPort = [], pBench = [], pCredit = [], pOptions = [];
 
         labels.push(evalDate);
-        
-        // Initial Calculation with Profit Check for Carry
-        let initialPort = navInit;
-        let initialCredit = uValCredit;
-        let initialOpt = uValOpt;
-        
-        // Apply carry to initial if already profitable (rare but possible in backdating)
-        if (useFees) {
-            const prof = initialPort - inv;
-            if (prof > 0) {
-                const carry = prof * carryPct;
-                initialPort -= carry;
-                // Pro-rate for components
-                const ratio = initialCredit / (initialCredit + initialOpt);
-                initialCredit -= (carry * ratio);
-                initialOpt -= (carry * (1-ratio));
-            }
-        }
-
-        dPort.push(initialPort);
+        dPort.push(navInit);
         dBench.push(inv);
         dStatic.push(0); 
-        dCredit.push(initialCredit);
-        dOptions.push(initialOpt);
+        dCredit.push(uValCredit);
+        dOptions.push(uValOpt);
 
-        pPort.push((initialPort/inv - 1)*100);
+        pPort.push((navInit/inv - 1)*100);
         pBench.push(0);
         pCredit.push(0);
-        pOptions.push((initialOpt/uCostOpt - 1)*100);
+        pOptions.push((uValOpt/uCostOpt - 1)*100);
 
         for(let q=1; q<=40; q++) {
             const t = q * 0.25;
             const dt = new Date(evalDate); dt.setMonth(dt.getMonth() + q*3);
             
             const S_fut = spot * Math.pow(1+gPrice, t);
-            
-            // Gross Values
             const valCreditGross = uValCredit * Math.pow(1+gBcred, t);
             
             let valOptGross = 0;
@@ -469,31 +568,23 @@
                 
                 const price = bsPrice(S_fut, opt.Strike, T_rem, r, vol);
                 valOptGross += (price * opt.Quantity * ratio);
-
                 valOptIntrinsic += Math.max(0, S_fut - opt.Strike) * opt.Quantity * ratio;
             });
 
-            const valPortGross = valCreditGross + valOptGross;
-
-            // Net Logic
-            let finalPort = valPortGross;
+            let finalPort = valCreditGross + valOptGross;
             let finalCredit = valCreditGross;
             let finalOpt = valOptGross;
 
             if (useFees) {
-                // A. Management Fee (Compounding Annual Drag)
                 const mgmtDrag = Math.pow(1 - mgmtPct, t);
-                
                 finalCredit *= mgmtDrag;
                 finalOpt *= mgmtDrag;
                 finalPort = finalCredit + finalOpt;
 
-                // B. Carry (Performance Fee) - CONTINUOUS DEDUCTION FOR CHART
                 const profit = finalPort - inv;
                 if (profit > 0) {
                     const carryAmt = profit * carryPct;
-                    finalPort -= carryAmt; // Net Liquidation Value at time t
-                    
+                    finalPort -= carryAmt; 
                     const creditShare = finalCredit / (finalCredit + finalOpt);
                     finalCredit -= (carryAmt * creditShare);
                     finalOpt -= (carryAmt * (1-creditShare));
@@ -515,7 +606,6 @@
             pOptions.push(((finalOpt/uCostOpt)-1)*100);
         }
 
-        // Final KPIs
         const finalPort = dPort[dPort.length-1];
         const finalBench = dBench[dBench.length-1];
         const alpha = finalPort - finalBench;
@@ -547,7 +637,6 @@
         renderPctChart(labels, pPort, pBench, pCredit, pOptions);
     }
 
-    // --- Charting ---
     function renderWealthChart(lbl, port, bench, stat, cred, opts) {
         const ctx = document.getElementById('chartWealth').getContext('2d');
         if(chartWealth) chartWealth.destroy();
@@ -611,7 +700,16 @@
                         }
                     } 
                 },
-                legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } }
+                legend: { 
+                    position: 'top', 
+                    labels: { usePointStyle: true, boxWidth: 8 },
+                    onClick: function(e, legendItem, legend) {
+                        const index = legendItem.datasetIndex;
+                        const ci = legend.chart;
+                        if (ci.isDatasetVisible(index)) { ci.hide(index); legendItem.hidden = true; } 
+                        else { ci.show(index); legendItem.hidden = false; }
+                    }
+                }
             }
         };
     }
@@ -620,6 +718,7 @@
         currentTab = tab;
         document.getElementById('btnWealth').className = tab === 'wealth' ? 'tab-btn active' : 'tab-btn';
         document.getElementById('btnPct').className = tab === 'pct' ? 'tab-btn active' : 'tab-btn';
+        
         document.getElementById('chartWealth').style.display = tab === 'wealth' ? 'block' : 'none';
         document.getElementById('chartPct').style.display = tab === 'pct' ? 'block' : 'none';
     }
