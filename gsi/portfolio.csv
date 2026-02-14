@@ -1,0 +1,4 @@
+Type,Ticker,PurchaseDate,CostBasis,CurrentValue,Strike,Quantity,ExpirationDate
+Credit,BCRED,12/1/2025,3489323.60,3489323.60,,,
+Option,SPXFP,1/7/2026,2699992.87,2309556.49,563.22,24359,1/7/2036
+Option,SPXFP,1/30/2026,1100000.00,816926.67,560.50,9512,1/30/2036
