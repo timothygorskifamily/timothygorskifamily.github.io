@@ -811,11 +811,19 @@
                         label: (c) => {
                             let val = c.raw;
                             if (type === 'IRR') {
-                                let t = c.dataIndex * 0.25;
-                                if(t <= 0) return ` ${c.dataset.label}: 0.0%`;
-                                let totalRet = 1 + (val/100);
+                                // Robust IRR Calculation (v35 Fix)
+                                let currentTime = c.parsed.x;
+                                let startTime = c.chart.data.labels[0].getTime();
+                                let diffTime = currentTime - startTime;
+                                let t = diffTime / (1000 * 60 * 60 * 24 * 365.25); 
+
+                                if(t < 0.1) return ` ${c.dataset.label}: 0.0%`;
+
+                                let totalRet = 1 + (val / 100);
+                                if(totalRet <= 0) return ` ${c.dataset.label}: -100%`;
+
                                 let irr = (Math.pow(totalRet, 1/t) - 1) * 100;
-                                return ` ${c.dataset.label}: ${irr.toFixed(1)}% (Ann)`;
+                                return ` ${c.dataset.label}: ${irr.toFixed(2)}% (Ann. IRR)`;
                             } else {
                                 return ` ${c.dataset.label}: ${fmt(val)}`;
                             }
@@ -840,19 +848,14 @@
         currentTab = tab;
         document.getElementById('btnWealth').className = tab === 'wealth' ? 'tab-btn active' : 'tab-btn';
         document.getElementById('btnPct').className = tab === 'pct' ? 'tab-btn active' : 'tab-btn';
-        document.getElementById('btnHistory').className = tab === 'history' ? 'tab-btn active' : 'tab-btn';
         
         document.getElementById('chartWealth').style.display = tab === 'wealth' ? 'block' : 'none';
         document.getElementById('chartPct').style.display = tab === 'pct' ? 'block' : 'none';
-        document.getElementById('chartHistory').style.display = tab === 'history' ? 'block' : 'none';
-        
-        if(tab === 'history') calc();
     }
 
     function resetZoom() {
         if(currentTab === 'wealth' && chartWealth) chartWealth.resetZoom();
         if(currentTab === 'pct' && chartPct) chartPct.resetZoom();
-        if(currentTab === 'history' && chartHistory) chartHistory.resetZoom();
     }
 
     window.onload = fetchPortfolio;
