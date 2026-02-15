@@ -86,13 +86,25 @@
 
         .chart-container { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; position: relative; height: 600px; }
         .chart-tools { position: absolute; top: 15px; right: 15px; z-index: 10; }
-        .btn-mini { background: #eff6ff; border: 1px solid #bfdbfe; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; cursor: pointer; color: var(--accent); }
+        .btn-mini { background: #eff6ff; border: 1px solid #bfdbfe; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; cursor: pointer; color: var(--accent); margin-left:10px; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 0.9rem; }
         th { text-align: right; padding: 12px; background: #f8fafc; color: #64748b; font-weight: 600; border-bottom: 2px solid var(--border); }
         th:first-child { text-align: left; }
         td { padding: 12px; text-align: right; border-bottom: 1px solid var(--border); font-family: 'SF Mono', monospace; }
         td:first-child { text-align: left; font-family: inherit; font-weight: 600; color: var(--primary); }
+
+        /* MODAL STYLES ADDED FROM SOURCE 2 */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 25px; border: 1px solid #888; width: 85%; max-width: 1000px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: black; }
+        
+        .hist-grid { display: grid; grid-template-columns: 250px 1fr; gap: 30px; }
+        .asset-btn { width: 100%; text-align: left; padding: 12px 15px; margin-bottom: 8px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; transition: 0.2s; font-weight: 600; display: flex; justify-content: space-between; }
+        .asset-btn:hover { background: #f8fafc; }
+        .asset-btn.active { background: #eff6ff; border-color: var(--accent); color: var(--accent); }
+        .asset-ret { font-weight: 800; }
     </style>
 </head>
 <body>
@@ -188,7 +200,10 @@
             <div class="inp-grp">
                 <div class="inp-header">
                     <label>S&P 500 Price Return</label>
-                    <span class="inp-val" id="valMkt">12.0%</span>
+                    <div style="display:flex; align-items:center;">
+                        <span class="inp-val" id="valMkt" style="margin-right:10px;">12.0%</span>
+                        <button class="btn-mini" onclick="openHistModal()">📜 View 50Y History</button>
+                    </div>
                 </div>
                 <input type="range" id="inpMkt" min="-50" max="50" step="0.5" value="12" oninput="updateVal('valMkt', this.value); updateDashboard()">
             </div>
@@ -215,7 +230,7 @@
                     <span class="inp-val" id="valVol">22%</span>
                 </div>
                 <input type="range" id="inpVol" min="10" max="50" step="1" value="22" oninput="updateVal('valVol', this.value); updateDashboard()">
-            </div>
+            </div>            
             
             <div style="margin-top:20px; font-size:0.8rem; color:#475569; line-height:1.6; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
                 <strong style="color:var(--primary); display:block; margin-bottom:5px;">Definitions:</strong>
@@ -245,8 +260,46 @@
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    </tbody>
+                </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<div id="histModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeHistModal()">&times;</span>
+        <h2 style="margin-top:0; color:#0f172a;">50-Year Market Returns (Educational)</h2>
+        <div style="font-size:0.85rem; color:#64748b; margin-bottom:20px;">Select an asset class on the left to view annual returns 1974-2024.</div>
+        
+        <div class="hist-grid">
+            <div>
+                <button class="asset-btn active" onclick="switchHistChart('SPX', this)">
+                    <span>🇺🇸 S&P 500 (Price Return)</span>
+                    <span class="asset-ret" style="color:#10b981;">9.2%</span>
+                </button>
+                <button class="asset-btn" onclick="switchHistChart('PE', this)">
+                    <span>🏢 Private Equity</span>
+                    <span class="asset-ret" style="color:#8b5cf6;">14.1%</span>
+                </button>
+                <button class="asset-btn" onclick="switchHistChart('BONDS', this)">
+                    <span>📉 US Bonds (Agg)</span>
+                    <span class="asset-ret" style="color:#3b82f6;">6.2%</span>
+                </button>
+                <button class="asset-btn" onclick="switchHistChart('GOLD', this)">
+                    <span>🥇 Gold</span>
+                    <span class="asset-ret" style="color:#f59e0b;">7.8%</span>
+                </button>
+            </div>
+            <div>
+                <h3 id="histChartTitle" style="margin-top:0;">S&P 500 Annual Returns (Price Only)</h3>
+                <div style="height:350px;">
+                    <canvas id="chartModal"></canvas>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top:20px; padding:10px; background:#fef2f2; color:#991b1b; border:1px solid #fecaca; border-radius:6px; font-size:0.85rem;">
+            <strong>Disclaimer:</strong> Data may not be fully accurate and is intended for educational demonstrations only. Please verify with official sources.
         </div>
     </div>
 </div>
@@ -258,6 +311,7 @@
     
     // --- Chart Globals ---
     let chartWealth = null;
+    let chartModal = null; // for historical modal
 
     // --- Main Logic: Wire UI to External Calculator ---
     function updateDashboard() {
@@ -409,6 +463,96 @@
 
     function resetZoom() {
         if(chartWealth) chartWealth.resetZoom();
+    }
+
+    // --- HISTORICAL DATA & MODAL LOGIC (From Source 2) ---
+    const SPX_PRICE_50Y = [
+        -29.7, 31.5, 19.1, -11.5, 1.1, 12.3, 25.8, -9.7, 14.8, 17.3,
+        1.4, 26.3, 14.6, 2.0, 12.4, 27.3, -6.6, 26.3, 4.5, 7.1,
+        -1.5, 34.1, 20.3, 31.0, 26.7, 19.5, -10.1, -13.0, -23.4, 26.4,
+        9.0, 3.0, 13.6, 3.5, -38.5, 23.5, 12.8, 0.0, 13.4, 29.6,
+        11.4, -0.7, 9.5, 19.4, -6.2, 28.9, 16.3, 26.9, -19.4, 24.2,
+        24.0
+    ];
+    const BONDS_50Y = [
+        5.2, 7.8, 15.6, 3.0, 1.4, 2.3, 2.7, 6.3, 32.6, 8.4,
+        15.1, 22.1, 15.3, 2.8, 7.9, 14.5, 8.9, 16.0, 7.4, 9.7,
+        -2.9, 18.5, 3.6, 9.7, 8.7, -0.8, 11.6, 8.4, 10.3, 4.1,
+        4.3, 2.4, 4.3, 7.0, 5.2, 5.9, 6.5, 7.8, 4.2, -2.0,
+        6.0, 0.5, 2.6, 3.5, 0.0, 8.7, 7.5, -1.5, -13.0, 5.5,
+        4.5
+    ];
+    const GOLD_50Y = [
+        72.0, -25.0, -4.0, 23.0, 37.0, 126.0, 12.5, -32.0, -13.0, -15.0,
+        -19.0, 6.0, 20.0, 24.0, -15.0, -2.0, -2.0, -10.0, -6.0, 17.0,
+        -2.0, 1.0, -4.0, -21.0, -1.0, -1.0, -6.0, 1.0, 24.0, 20.0,
+        5.0, 18.0, 23.0, 31.0, 5.0, 24.0, 29.0, 10.0, 7.0, -28.0,
+        -1.0, -10.0, 8.0, 13.0, -1.0, 18.0, 25.0, -3.0, -0.3, 13.1,
+        25.0
+    ];
+    const PE_50Y = [
+        12.5, 18.2, 28.4, 12.1, 15.0, 20.2, 28.5, 2.1, 19.3, 18.2,
+        10.5, 29.4, 17.8, 8.2, 18.5, 25.1, 4.2, 32.1, 12.3, 15.6,
+        9.2, 45.2, 28.3, 35.1, 22.4, 30.2, -0.5, -12.2, -1.8, 32.4,
+        15.6, 26.2, 22.8, 17.2, -26.4, 14.1, 23.8, 9.8, 14.5, 21.6,
+        13.2, 6.8, 11.2, 19.8, 10.1, 18.6, 23.4, 39.0, -4.2, 5.8,
+        10.0
+    ];
+
+    const HIST_YEARS = Array.from({length: 51}, (_, i) => 1974 + i);
+    const ASSET_DATA = {
+        'SPX': { label: 'S&P 500 (Price Return)', color: '#10b981', data: SPX_PRICE_50Y },
+        'PE': { label: 'Private Equity (Proxy)', color: '#8b5cf6', data: PE_50Y },
+        'BONDS': { label: 'US Bonds (Agg)', color: '#3b82f6', data: BONDS_50Y },
+        'GOLD': { label: 'Gold', color: '#f59e0b', data: GOLD_50Y }
+    };
+
+    function openHistModal() {
+        document.getElementById('histModal').style.display = 'block';
+        setTimeout(() => switchHistChart('SPX', document.querySelector('.asset-btn')), 100);
+    }
+    
+    function closeHistModal() {
+        document.getElementById('histModal').style.display = 'none';
+    }
+    
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('histModal')) {
+            closeHistModal();
+        }
+    }
+
+    function switchHistChart(key, btn) {
+        document.querySelectorAll('.asset-btn').forEach(b => b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+
+        const asset = ASSET_DATA[key];
+        document.getElementById('histChartTitle').innerText = `${asset.label} Annual Returns (1974-2024)`;
+
+        const ctx = document.getElementById('chartModal').getContext('2d');
+        if(chartModal) chartModal.destroy();
+
+        chartModal = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: HIST_YEARS,
+                datasets: [{
+                    label: 'Annual Return (%)',
+                    data: asset.data,
+                    backgroundColor: asset.data.map(v => v >= 0 ? asset.color : '#ef4444'),
+                    borderRadius: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { 
+                    y: { grid: { color: '#f1f5f9' }, title: { display:true, text:'Return %' } }, 
+                    x: { grid: { display:false }, ticks:{ maxTicksLimit: 10 } } 
+                },
+                plugins: { legend: {display:false} }
+            }
+        });
     }
 
     // Init
