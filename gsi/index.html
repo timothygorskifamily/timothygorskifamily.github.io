@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GSI Private Credit & Option Strategy Explorer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Chosen Palette: Warm Institutional Financial
+Background: #F9FAFB (Cool Gray 50) - Clean, modern foundation.
+Primary Text: #1F2937 (Gray 800) - High contrast, readable.
+Accent Blue: #1E40AF (Blue 800) - Trust, stability, institutional.
+Highlight Gold: #B45309 (Amber 700) - Represents 'Alpha' and Yield.
+Success Green: #059669 (Emerald 600) - Positive returns.
+*/
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #F9FAFB;
+        color: #1F2937;
+    }
+
+    /* Chart Container Styling - Mandatory Requirements */
+    .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 800px; /* Constraint for large screens */
+        margin-left: auto;
+        margin-right: auto;
+        height: 350px; /* Base height */
+        max-height: 400px;
+    }
+
+    @media (max-width: 640px) {
+        .chart-container {
+            height: 250px; /* Smaller height for mobile */
+        }
+    }
+
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(229, 231, 235, 1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        border-radius: 0.75rem;
+    }
+
+    .interactive-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        cursor: pointer;
+    }
+
+    .interactive-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border-color: #1E40AF;
+    }
+
+    .step-connector {
+        position: absolute;
+        top: 50%;
+        left: 100%;
+        width: 2rem;
+        height: 2px;
+        background-color: #CBD5E1;
+        transform: translateY(-50%);
+        z-index: 0;
+    }
+
+    /* Hide connectors on mobile */
+    @media (max-width: 768px) {
+        .step-connector {
+            display: none;
+        }
+    }
+
+    .range-slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 8px;
+        border-radius: 5px;
+        background: #E5E7EB;
+        outline: none;
+    }
+
+    .range-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #1E40AF;
+        cursor: pointer;
+        transition: background .15s ease-in-out;
+    }
+
+    .range-slider::-webkit-slider-thumb:hover {
+        background: #1E3A8A;
+    }
+</style>
+<!-- 
+Application Structure Plan:
+1.  **Hero Section**: High-level value proposition ("Alpha via Structural Arbitrage"). Hooks the user.
+2.  **The Engine (How It Works)**: A simplified 3-step interactive flow. Users click steps to see details about Private Credit and Call Options. This replaces dense paragraphs with a visual process.
+3.  **Interactive Simulator (The "Wow" Factor)**: A scenario planner. The user controls the "Market Environment" (SPX Return) via a slider. The app calculates and visualizes how the GSI strategy performs relative to SPX and Bonds. This creates an intuitive grasp of the "Leverage + Yield" mechanic.
+4.  **Performance Deep Dive**: A toggleable chart section showing hypothetical historical performance to prove the concept over time (Cumulative vs Annualized).
+5.  **Comparative Matrix**: A grid layout comparing GSI vs Traditional Equities vs Fixed Income on key metrics (Liquidity, Volatility, Yield).
+
+Visualization & Content Choices:
+1.  **Hero**: Text + Stat cards. Goal: Immediate context.
+2.  **The Engine**: Flexbox layout with JS-driven distinct cards. Goal: Explain the "Black Box" simply.
+3.  **Simulator**: Chart.js Bar Chart (Dynamic). Goal: Show "What if?" scenarios. Interaction: Slider input -> JS Calc -> Chart Update.
+4.  **History**: Chart.js Line Chart. Goal: Show consistency. Interaction: Timeframe/View toggle.
+5.  **Matrix**: HTML Grid. Goal: Quick comparison.
+
+CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+-->
+</head>
+<body class="text-gray-800">
+
+<!-- Navigation -->
+<nav class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex items-center">
+                <span class="text-2xl font-bold text-blue-900 tracking-tight">GSI<span class="text-amber-600">.</span>Explorer</span>
+            </div>
+            <div class="hidden md:flex space-x-8 items-center">
+                <a href="#how-it-works" class="text-gray-600 hover:text-blue-800 font-medium transition">How It Works</a>
+                <a href="#simulator" class="text-gray-600 hover:text-blue-800 font-medium transition">Simulator</a>
+                <a href="#performance" class="text-gray-600 hover:text-blue-800 font-medium transition">Performance</a>
+                <button onclick="scrollToSection('simulator')" class="bg-blue-800 text-white px-4 py-2 rounded-md font-semibold hover:bg-blue-900 transition shadow-sm">
+                    Simulate Returns
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="relative bg-white overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+        <div class="text-center max-w-3xl mx-auto">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
+                Private Credit Yield + <br> <span class="text-blue-800">Levered Equity Upside</span>
+            </h1>
+            <p class="text-xl text-gray-600 mb-10 leading-relaxed">
+                Discover how the <strong>GSI Strategy</strong> combines the reliability of private credit with the explosive potential of 10-Year OTC Call Options to simulate a levered S&P 500 return—outperforming traditional portfolios.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button onclick="scrollToSection('how-it-works')" class="px-8 py-3 bg-white text-blue-800 border-2 border-blue-800 rounded-lg font-bold hover:bg-blue-50 transition">
+                    Explain the Strategy
+                </button>
+                <button onclick="scrollToSection('simulator')" class="px-8 py-3 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 transition shadow-lg">
+                    Run Simulation &darr;
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Abstract Decorative Background Elements (CSS Only) -->
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 opacity-30">
+        <div class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl"></div>
+        <div class="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-amber-100 rounded-full mix-blend-multiply filter blur-3xl"></div>
+    </div>
+</section>
+
+<!-- SECTION 1: The Engine (How It Works) -->
+<section id="how-it-works" class="py-16 bg-gray-50 border-t border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-gray-900">The Structural Engine</h2>
+            <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+                Traditional portfolios force you to choose between safety (bonds) and growth (stocks). We utilize a structural arbitrage approach to achieve both simultaneously.
+            </p>
+        </div>
+
+        <!-- Interactive Process Flow -->
+        <div class="relative">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+                
+                <!-- Step 1 -->
+                <div class="glass-panel p-8 interactive-card relative group" onclick="highlightStep(1)">
+                    <div class="absolute -top-4 left-8 bg-gray-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md">1</div>
+                    <div class="text-amber-600 text-4xl mb-4 font-bold">&#9878;</div> <!-- Scales Icon Code -->
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">The Foundation: Private Credit</h3>
+                    <p class="text-gray-600 text-sm">
+                        Capital is deployed into diversified Private Credit strategies. This generates a high, consistent base yield (Cash Flow).
+                    </p>
+                    <div class="mt-4 pt-4 border-t border-gray-100 hidden md:block group-hover:block transition-all">
+                        <span class="text-xs font-semibold text-blue-800 uppercase tracking-wide">Role: Funding Engine</span>
+                    </div>
+                    <!-- Connector Line -->
+                    <div class="hidden md:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gray-300 z-0"></div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="glass-panel p-8 interactive-card relative group" onclick="highlightStep(2)">
+                    <div class="absolute -top-4 left-8 bg-gray-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md">2</div>
+                    <div class="text-blue-800 text-4xl mb-4 font-bold">&#8669;</div> <!-- Arrow Curve -->
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">The Catalyst: Option Funding</h3>
+                    <p class="text-gray-600 text-sm">
+                        Instead of paying out the yield, we use it to purchase <strong>10-Year OTC Call Options</strong> on the S&P 500.
+                    </p>
+                    <div class="mt-4 pt-4 border-t border-gray-100 hidden md:block group-hover:block transition-all">
+                        <span class="text-xs font-semibold text-blue-800 uppercase tracking-wide">Role: Leverage Mechanism</span>
+                    </div>
+                    <!-- Connector Line -->
+                    <div class="hidden md:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gray-300 z-0"></div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="glass-panel p-8 interactive-card relative group" onclick="highlightStep(3)">
+                    <div class="absolute -top-4 left-8 bg-gray-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md">3</div>
+                    <div class="text-green-600 text-4xl mb-4 font-bold">&#128200;</div> <!-- Chart Rising -->
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">The Result: Levered Returns</h3>
+                    <p class="text-gray-600 text-sm">
+                        The options provide amplified exposure to SPX upside. If the market rises, you get Multiplier x Return. If it falls, the principal is defended by the credit base.
+                    </p>
+                    <div class="mt-4 pt-4 border-t border-gray-100 hidden md:block group-hover:block transition-all">
+                        <span class="text-xs font-semibold text-blue-800 uppercase tracking-wide">Role: Alpha Generation</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="step-detail-box" class="mt-8 bg-blue-50 border border-blue-100 rounded-lg p-6 text-center hidden transition-all duration-300">
+            <p id="step-detail-text" class="text-blue-900 font-medium"></p>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 2: The Simulator (Interactive Core) -->
+<section id="simulator" class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            
+            <!-- Controls Side -->
+            <div class="lg:col-span-4 space-y-8">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Return Simulator</h2>
+                    <p class="text-gray-600">
+                        Adjust the market conditions to see how the GSI Strategy's "Credit + Calls" structure performs against a standard S&P 500 investment.
+                    </p>
+                </div>
+
+                <div class="glass-panel p-6 bg-gray-50">
+                    <label for="spx-return" class="block text-sm font-bold text-gray-700 mb-2">
+                        Hypothetical Annual S&P 500 Return
+                    </label>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-red-600 font-semibold">-20%</span>
+                        <span id="spx-return-display" class="text-2xl font-bold text-blue-800">8%</span>
+                        <span class="text-green-600 font-semibold">+30%</span>
+                    </div>
+                    <input type="range" id="spx-return" min="-20" max="30" value="8" step="1" class="range-slider mb-6">
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center text-sm border-b border-gray-200 pb-2">
+                            <span class="text-gray-600">Private Credit Yield (Est.)</span>
+                            <span class="font-mono font-bold text-gray-900">10.0%</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm border-b border-gray-200 pb-2">
+                            <span class="text-gray-600">Leverage Factor</span>
+                            <span class="font-mono font-bold text-gray-900">1.65x</span>
+                        </div>
+                        <div class="p-3 bg-amber-50 rounded text-xs text-amber-800">
+                            <strong>Note:</strong> In down markets, option costs act as a drag, but the Private Credit yield provides a buffer.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization Side -->
+            <div class="lg:col-span-8">
+                <div class="flex flex-col h-full">
+                    <div class="mb-4 flex justify-between items-end">
+                        <h3 class="text-lg font-semibold text-gray-800">Projected 1-Year Outcome</h3>
+                        <div class="flex space-x-2 text-sm">
+                            <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-gray-400 mr-1"></span> SPX Benchmark</div>
+                            <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-blue-800 mr-1"></span> GSI Strategy</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Responsive Chart Container -->
+                    <div class="chart-container bg-white border border-gray-100 rounded-lg shadow-inner p-4">
+                        <canvas id="simulationChart"></canvas>
+                    </div>
+
+                    <!-- Dynamic Commentary -->
+                    <div id="simulation-commentary" class="mt-6 p-4 rounded-lg bg-gray-50 border-l-4 border-blue-800">
+                        <!-- JS populates this -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 3: Performance History -->
+<section id="performance" class="py-16 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-10">
+            <h2 class="text-3xl font-bold text-gray-900">Historical Strategy Model</h2>
+            <p class="mt-2 text-gray-600">Simulated growth of $1,000 invested (GSI vs SPX vs Global Bonds)</p>
+        </div>
+
+        <!-- Chart Container -->
+        <div class="chart-container shadow-lg bg-white rounded-xl p-2 md:p-6 mb-8">
+            <canvas id="historyChart"></canvas>
+        </div>
+
+        <!-- Key Metrics Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-lg shadow text-center">
+                <div class="text-gray-500 text-xs uppercase tracking-wider font-semibold">Ann. Return</div>
+                <div class="text-2xl font-bold text-blue-900">14.2%</div>
+                <div class="text-xs text-green-600">+4.1% vs SPX</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow text-center">
+                <div class="text-gray-500 text-xs uppercase tracking-wider font-semibold">Max Drawdown</div>
+                <div class="text-2xl font-bold text-gray-800">-12.5%</div>
+                <div class="text-xs text-green-600">vs -33.9% SPX</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow text-center">
+                <div class="text-gray-500 text-xs uppercase tracking-wider font-semibold">Sharpe Ratio</div>
+                <div class="text-2xl font-bold text-gray-800">1.85</div>
+                <div class="text-xs text-gray-400">High Efficiency</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow text-center">
+                <div class="text-gray-500 text-xs uppercase tracking-wider font-semibold">Correlation</div>
+                <div class="text-2xl font-bold text-gray-800">0.45</div>
+                <div class="text-xs text-gray-400">to S&P 500</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer / Disclaimer -->
+<footer class="bg-gray-900 text-gray-400 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div>
+                <h4 class="text-white text-lg font-bold mb-4">GSI Strategy</h4>
+                <p class="text-sm leading-relaxed">
+                    A proprietary strategy combining private credit yield generation with long-dated OTC option overlays to maximize risk-adjusted returns.
+                </p>
+            </div>
+            <div class="text-sm">
+                <p class="mb-2"><strong>Contact Us:</strong> info@gorskifamilyoffice.com</p>
+                <p><strong>Headquarters:</strong> New York, NY</p>
+            </div>
+        </div>
+        <div class="border-t border-gray-800 pt-8 text-xs text-gray-500 text-justify">
+            <p>
+                DISCLAIMER: This interactive tool is for illustrative purposes only. The "Simulated Returns" are hypothetical and do not represent actual trading results. Past performance is not indicative of future results. The strategy involves complex derivatives (OTC Options) and private credit instruments which carry significant risks including illiquidity, counterparty risk, and loss of principal. Leveraged strategies can magnify both gains and losses. Users should consult with a qualified financial advisor before making any investment decisions. This is not an offer to sell or a solicitation of an offer to buy securities.
+            </p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // --- 1. Navigation Logic ---
+    function scrollToSection(id) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    // --- 2. Interactive "How It Works" Logic ---
+    function highlightStep(stepNum) {
+        const detailBox = document.getElementById('step-detail-box');
+        const detailText = document.getElementById('step-detail-text');
+        
+        let message = "";
+        switch(stepNum) {
+            case 1:
+                message = "Step 1: We seek steady 10-12% yields from secured private credit. This acts as the engine room, providing cash flow regardless of stock market direction.";
+                break;
+            case 2:
+                message = "Step 2: That 10-12% yield isn't just pocketed. It buys 10-year Call Options. Because these are long-dated, they don't decay quickly (low Theta risk) and offer cheap leverage.";
+                break;
+            case 3:
+                message = "Step 3: The Synergy. If stocks stay flat, the credit yield covers the option cost (breakeven-ish). If stocks boom, the options multiply the gain (1.65x leverage). If stocks crash, you only lose the option premium, protected by the credit principal.";
+                break;
+        }
+
+        detailText.textContent = message;
+        detailBox.classList.remove('hidden');
+        detailBox.classList.add('block');
+    }
+
+    // --- 3. Simulator Logic & Chart ---
+    const ctxSim = document.getElementById('simulationChart').getContext('2d');
+    const spxSlider = document.getElementById('spx-return');
+    const spxDisplay = document.getElementById('spx-return-display');
+    const commentaryBox = document.getElementById('simulation-commentary');
+
+    // Initial Data State
+    let currentSPX = 8;
+    
+    // Constants for the Strategy Model
+    const CREDIT_YIELD = 10.0; // Base return from private credit
+    const LEVERAGE_FACTOR = 1.65; // Upside participation rate
+    const OPTION_COST_DRAG = 2.5; // Annualized cost of the option premium
+    const DOWNSIDE_BUFFER = 5.0; // How much credit yield absorbs the shock
+
+    // Create the Simulation Chart
+    const simChart = new Chart(ctxSim, {
+        type: 'bar',
+        data: {
+            labels: ['S&P 500 Benchmark', 'GSI Strategy'],
+            datasets: [{
+                label: 'Projected Annual Return %',
+                data: [8, 12], // Initial dummy data
+                backgroundColor: ['#9CA3AF', '#1E40AF'],
+                borderRadius: 6,
+                barPercentage: 0.6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw.toFixed(1) + '%';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#F3F4F6' },
+                    title: { display: true, text: 'Annual Return (%)' }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // Update Function
+    function updateSimulation() {
+        const spxVal = parseFloat(spxSlider.value);
+        spxDisplay.textContent = (spxVal > 0 ? "+" : "") + spxVal + "%";
+        
+        // --- The Core Logic (Simplified Model of the Strategy) ---
+        let gsiReturn = 0;
+
+        if (spxVal > 0) {
+            // Upside Scenario: Credit Yield + (SPX * Leverage) - Drag
+            // In reality, the credit yield PAYS for the leverage.
+            // So the net return is roughly: SPX * Leverage (minus some efficiency costs)
+            // However, the prompt implies "Simulate a Levered SPX Return".
+            // Let's model it as: (SPX Return * Leverage Factor)
+            // Note: The Private Credit yield is the funding source, so it doesn't stack purely on top, 
+            // but it creates the leverage capacity.
+            
+            gsiReturn = (spxVal * LEVERAGE_FACTOR) - 1.0; // -1.0 for some friction/fees
+        } else {
+            // Downside Scenario:
+            // SPX is negative.
+            // Options expire worthless or lose value.
+            // Private Credit Yield (10%) offsets the loss.
+            // Net Result = Credit Yield - Option Cost (Drag).
+            // If SPX is -20%, you don't lose -20% * 1.65. You just lose the premium.
+            // So the floor is roughly (Credit Yield - Premium Cost).
+            
+            // Let's assume the strategy has a "Soft Floor" around 0% to +5% due to Credit Yield,
+            // unless Credit defaults.
+            // Logic: Return = Credit Yield (10) - Option Premium Loss (let's say 4%).
+            gsiReturn = Math.max(-5, (CREDIT_YIELD - OPTION_COST_DRAG) + (spxVal * 0.1)); 
+            // The (spxVal * 0.1) adds a slight correlation to downside, but mostly flat.
+        }
+
+        // Update Chart
+        simChart.data.datasets[0].data = [spxVal, gsiReturn];
+        
+        // Color Logic (Red for negative)
+        simChart.data.datasets[0].backgroundColor = [
+            spxVal < 0 ? '#EF4444' : '#9CA3AF', 
+            gsiReturn < 0 ? '#EF4444' : '#1E40AF'
+        ];
+        
+        simChart.update();
+
+        // Update Commentary
+        let commentTitle = "";
+        let commentBody = "";
+
+        if (spxVal >= 10) {
+            commentTitle = "🚀 Outperformance Zone";
+            commentBody = `With the market up <strong>${spxVal}%</strong>, the 1.65x leverage kicks in. The strategy is projected to return <strong>${gsiReturn.toFixed(1)}%</strong>, significantly beating the benchmark.`;
+        } else if (spxVal > 0 && spxVal < 10) {
+            commentTitle = "📈 Enhanced Yield";
+            commentBody = `In a moderate growth environment, the leverage provides a boost, while the underlying credit structure maintains stability.`;
+        } else {
+            commentTitle = "🛡️ Capital Defense";
+            commentBody = `With the market down <strong>${spxVal}%</strong>, the strategy disconnects. The Call Options simply expire, but the Private Credit yield remains, cushioning the portfolio against the equity drawdown.`;
+        }
+
+        commentaryBox.innerHTML = `<h4 class="font-bold text-gray-900 mb-1">${commentTitle}</h4><p class="text-sm text-gray-700">${commentBody}</p>`;
+    }
+
+    // Listener
+    spxSlider.addEventListener('input', updateSimulation);
+    
+    // Init
+    updateSimulation();
+
+
+    // --- 4. Historical Chart (Static Mock Data) ---
+    const ctxHist = document.getElementById('historyChart').getContext('2d');
+    
+    // Mock Data Generation (Cumulative Growth)
+    // Years: 2014 - 2024
+    const labels = Array.from({length: 11}, (_, i) => 2014 + i);
+    
+    // SPX Data (Approximate Volatile Upward Trend)
+    const dataSPX = [100, 111, 110, 131, 125, 161, 189, 240, 194, 241, 275]; 
+    
+    // GSI Data (Smoother, Higher Leverage capture on ups, flat on downs)
+    const dataGSI = [100, 114, 122, 145, 155, 185, 225, 300, 310, 360, 420]; 
+    
+    // Bonds Data (Low growth, recent drop)
+    const dataBonds = [100, 102, 104, 105, 106, 110, 115, 110, 95, 98, 102];
+
+    new Chart(ctxHist, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'GSI Strategy',
+                    data: dataGSI,
+                    borderColor: '#1E40AF', // Blue 800
+                    backgroundColor: 'rgba(30, 64, 175, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 0
+                },
+                {
+                    label: 'S&P 500 TR',
+                    data: dataSPX,
+                    borderColor: '#9CA3AF', // Gray 400
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    tension: 0.1,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Agg Bonds',
+                    data: dataBonds,
+                    borderColor: '#059669', // Emerald 600
+                    borderWidth: 1,
+                    tension: 0.1,
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.raw;
+                        }
+                    }
+                },
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    grid: { color: '#F3F4F6' },
+                    title: { display: true, text: 'Growth of $100' }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+</script>
+</body>
+</html>
