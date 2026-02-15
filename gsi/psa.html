@@ -6,56 +6,43 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-CVZG5030CZ');
     </script>
-
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portfolio Strategy Analyzer Prototype</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <script src="gsi-calculator.js"></script>
 
     <style>
         :root { --primary: #0f172a; --accent: #3b82f6; --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #334155; margin: 0; padding: 20px; }
         .container { max-width: 1400px; margin: auto; background: var(--card); padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
         
-        /* Navigation Bar Styles */
-        .nav-bar {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 25px;
-            background: var(--card);
-            padding: 15px;
+        .nav-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 25px; 
+            background: white; 
+            padding: 0 20px; 
+            height: 64px;
+            border-bottom: 1px solid var(--border); 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             border-radius: 8px;
-            border: 1px solid var(--border);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
+        
+        .logo-text { font-size: 1.5rem; font-weight: 700; color: #1e3a8a; letter-spacing: -0.02em; text-decoration: none; }
+        .logo-dot { color: #d97706; }
 
-        .nav-link {
-            text-decoration: none;
-            color: #64748b;
-            font-weight: 600;
-            font-size: 0.95rem;
-            padding: 5px 10px;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-
-        .nav-link:hover {
-            color: var(--accent);
-            background: #eff6ff;
-        }
-
-        .nav-link.active {
-            color: var(--accent);
-            background: #eff6ff;
-        }
+        .nav-links { display: flex; gap: 30px; }
+        .nav-link { text-decoration: none; color: #4b5563; font-weight: 500; font-size: 0.95rem; transition: color 0.2s; }
+        .nav-link:hover { color: #1e40af; }
+        .nav-link.active { color: #1e40af; font-weight: 600; }
 
         .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--border); padding-bottom: 20px; margin-bottom: 25px; }
         h1 { margin: 0; font-size: 1.8rem; color: var(--primary); letter-spacing: -0.5px; }
@@ -86,11 +73,6 @@
         input:checked + .slider { background-color: var(--accent); }
         input:checked + .slider:before { transform: translateX(18px); }
 
-        .status-box { padding: 10px; margin-bottom: 15px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; text-align: center; }
-        .status-loading { background: #e0f2fe; color: #0284c7; }
-        .status-error { background: #fee2e2; color: #dc2626; }
-        .status-success { background: #dcfce7; color: #166534; }
-
         .inp-grp { margin-bottom: 20px; }
         .inp-header { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; }
         .inp-grp label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin: 0; }
@@ -102,67 +84,42 @@
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #e2e8f0; border-radius: 2px; }
         input[type=number], input[type=date] { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; font-weight: 600; box-sizing: border-box; }
 
-        .btn-mini { background: #eff6ff; border: 1px solid #bfdbfe; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; cursor: pointer; color: var(--accent); margin-left: 10px; text-decoration: none; }
-        .btn-mini:hover { background: #dbeafe; }
-
         .chart-container { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; position: relative; height: 600px; }
-        .tab-row { display: flex; gap: 10px; margin-bottom: 15px; }
-        .tab-btn { padding: 8px 16px; border: 1px solid var(--border); background: white; border-radius: 20px; cursor: pointer; font-weight: 600; color: #64748b; font-size: 0.9rem; }
-        .tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
         .chart-tools { position: absolute; top: 15px; right: 15px; z-index: 10; }
+        .btn-mini { background: #eff6ff; border: 1px solid #bfdbfe; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; cursor: pointer; color: var(--accent); }
 
         table { width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 0.9rem; }
         th { text-align: right; padding: 12px; background: #f8fafc; color: #64748b; font-weight: 600; border-bottom: 2px solid var(--border); }
         th:first-child { text-align: left; }
         td { padding: 12px; text-align: right; border-bottom: 1px solid var(--border); font-family: 'SF Mono', monospace; }
         td:first-child { text-align: left; font-family: inherit; font-weight: 600; color: var(--primary); }
-
-        /* Visually hide Master Cost Basis and Master Current Value columns */
-        table th:nth-child(2), table th:nth-child(3),
-        table td:nth-child(2), table td:nth-child(3) {
-            display: none;
-        }
-
-        /* Modal */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 25px; border: 1px solid #888; width: 85%; max-width: 1000px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .close:hover { color: black; }
-        
-        .hist-grid { display: grid; grid-template-columns: 250px 1fr; gap: 30px; }
-        .asset-btn { width: 100%; text-align: left; padding: 12px 15px; margin-bottom: 8px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; transition: 0.2s; font-weight: 600; display: flex; justify-content: space-between; }
-        .asset-btn:hover { background: #f8fafc; }
-        .asset-btn.active { background: #eff6ff; border-color: var(--accent); color: var(--accent); }
-        .asset-ret { font-weight: 800; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <nav class="nav-bar">
-        <a href="https://gorskifamilyoffice.com/gsi/index.html" class="nav-link">← Main Page</a>
-        <a href="https://gorskifamilyoffice.com/gsi/historical.html" class="nav-link">Historical Backtest</a>
-        <a href="#" class="nav-link active">Projections (PSA) →</a>
+        <a href="https://gorskifamilyoffice.com/gsi/index.html" class="logo-text">GSI<span class="logo-dot">.</span>Explorer</a>
+        <div class="nav-links">
+            <a href="https://gorskifamilyoffice.com/gsi/historical.html" class="nav-link">Historical Backtest</a>
+            <a href="#" class="nav-link active">Projections (PSA)</a>
+        </div>
     </nav>
 
     <div class="header">
         <div>
-            <h1>Portfolio Strategy Analyzer <span class="proto-badge">Prototype</span></h1>
-            <div class="sub"></div>
+            <h1>Portfolio Strategy Analyzer <span style="font-size:0.5em; background:#f1f5f9; padding:4px 8px; border-radius:4px; vertical-align:middle;">Prototype</span></h1>
+            <div class="sub">Total Return ETF vs Hedge Fund Structure</div>
         </div>
         <div style="text-align:right">
             <span id="displayBadge" class="gross-badge">Displaying: GROSS</span>
-            <div class="kpi-lbl" style="display:inline-block; text-align:right;">
-                Evaluation Date<br>
-                <input type="date" id="evalDate" value="2026-02-11" style="border:none; background:transparent; font-weight:700; font-size:1.1rem; text-align:right; font-family:inherit; cursor:pointer;" onchange="calc()">
-            </div>
         </div>
     </div>
 
     <div class="kpi-grid">
         <div class="kpi">
             <div class="kpi-lbl">Your Capital</div>
-            <div class="kpi-val" id="kpiCap">$250k</div>
+            <div class="kpi-val" id="kpiCap">$0</div>
         </div>
         <div class="kpi" style="background:#f0fdf4; border-color:#bbf7d0;">
             <div class="kpi-lbl" style="color:#166534;">Total Notional Exposure</div>
@@ -189,16 +146,14 @@
 
     <div class="dashboard">
         <div class="controls">
-            <div id="statusBox" class="status-box status-loading">Loading portfolio.csv...</div>
-
             <div class="inp-grp">
-                <label style="margin-bottom:8px;">Current SPXFP Price</label>
-                <input type="number" id="inpSpot" value="580" step="0.01" onchange="calc()">
+                <label style="margin-bottom:8px;">SPXFP Spot Price</label>
+                <input type="number" id="inpSpot" value="580" step="0.50" onchange="updateDashboard()">
             </div>
 
             <div class="inp-grp">
-                <label style="margin-bottom:8px;">Your Investment Capital to Date ($)</label>
-                <input type="number" id="inpInv" value="250000" step="10000" onchange="calc()">
+                <label style="margin-bottom:8px;">Your Investment Capital ($)</label>
+                <input type="number" id="inpInv" value="250000" step="10000" onchange="updateDashboard()">
             </div>
 
             <div class="fee-section">
@@ -209,24 +164,21 @@
                         <span class="slider round"></span>
                     </label>
                 </div>
-
                 <div id="feeControls" style="opacity:0.5; pointer-events:none; transition: opacity 0.3s;">
                     <div class="inp-grp">
                         <label>Carry Fee (On Withdrawal)</label>
-                        <select id="selCarry" onchange="calc()">
+                        <select id="selCarry" onchange="updateDashboard()">
                             <option value="0">0%</option>
-                            <option value="7">7%</option>
                             <option value="10">10%</option>
                             <option value="20" selected>20%</option>
                         </select>
                     </div>
-
                     <div class="inp-grp" style="margin-bottom:0;">
                         <div class="inp-header">
                             <label>Management Fee (Annual)</label>
                             <span class="inp-val" id="valMgmt">0.5%</span>
                         </div>
-                        <input type="range" id="inpMgmt" min="0" max="2" step="0.5" value="0.5" oninput="updateVal('valMgmt', this.value); calc()">
+                        <input type="range" id="inpMgmt" min="0" max="2" step="0.5" value="0.5" oninput="updateVal('valMgmt', this.value); updateDashboard()">
                     </div>
                 </div>
             </div>
@@ -235,13 +187,10 @@
 
             <div class="inp-grp">
                 <div class="inp-header">
-                    <label>S&P 500 Total Return</label>
-                    <div style="display:flex; align-items:center;">
-                        <span class="inp-val" id="valMkt" style="margin-right:10px;">12%</span>
-                        <button class="btn-mini" onclick="openHistModal()">📜 View 50Y History</button>
-                    </div>
+                    <label>S&P 500 Price Return</label>
+                    <span class="inp-val" id="valMkt">12.0%</span>
                 </div>
-                <input type="range" id="inpMkt" min="-10" max="50" step="0.5" value="12" oninput="updateVal('valMkt', this.value); calc()">
+                <input type="range" id="inpMkt" min="-50" max="50" step="0.5" value="12" oninput="updateVal('valMkt', this.value); updateDashboard()">
             </div>
 
             <div class="inp-grp">
@@ -249,15 +198,15 @@
                     <label>S&P 500 Dividend Yield</label>
                     <span class="inp-val" id="valDiv">1.1%</span>
                 </div>
-                <input type="range" id="inpDiv" min="0" max="10" step="0.1" value="1.1" oninput="updateVal('valDiv', this.value); calc()">
+                <input type="range" id="inpDiv" min="0" max="5" step="0.1" value="1.1" oninput="updateVal('valDiv', this.value); updateDashboard()">
             </div>
 
             <div class="inp-grp">
                 <div class="inp-header">
-                    <label>Credit</label>
+                    <label>Credit Yield</label>
                     <span class="inp-val" id="valBcred">9.5%</span>
                 </div>
-                <input type="range" id="inpBcred" min="0" max="50" step="0.5" value="9.5" oninput="updateVal('valBcred', this.value); calc()">
+                <input type="range" id="inpBcred" min="5" max="15" step="0.5" value="9.5" oninput="updateVal('valBcred', this.value); updateDashboard()">
             </div>
 
             <div class="inp-grp">
@@ -265,205 +214,180 @@
                     <label>Implied Volatility</label>
                     <span class="inp-val" id="valVol">22%</span>
                 </div>
-                <div style="font-size:0.75rem; color:#64748b; margin-bottom:5px;">(just affects options pricing)</div>
-                <input type="range" id="inpVol" min="0" max="50" step="0.5" value="22" oninput="updateVal('valVol', this.value); calc()">
+                <input type="range" id="inpVol" min="10" max="50" step="1" value="22" oninput="updateVal('valVol', this.value); updateDashboard()">
             </div>
             
             <div style="margin-top:20px; font-size:0.8rem; color:#475569; line-height:1.6; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
                 <strong style="color:var(--primary); display:block; margin-bottom:5px;">Definitions:</strong>
-                <ul style="margin:0; padding-left:20px;">
-                    <li><strong>NAV Value:</strong> Combined value of Credit + Options.</li>
+                <ul style="padding-left:16px; margin:0;">
+                    <li style="margin-bottom:6px;"><strong>NAV Value:</strong> Combined value of Credit + Options.</li>
                     <li><strong>Static Return:</strong> The theoretical <em>Intrinsic Value</em> of the option leg. Starts at $0 and grows to meet the full Option Value at maturity.</li>
                 </ul>
             </div>
         </div>
 
         <div>
-            <div class="tab-row">
-                <button class="tab-btn active" onclick="switchTab('wealth')" id="btnWealth">Wealth Growth (Proj)</button>
-                <button class="tab-btn" onclick="switchTab('pct')" id="btnPct">Relative Return (IRR)</button>
-            </div>
-            
             <div class="chart-container">
                 <div class="chart-tools">
                     <button class="btn-mini" onclick="resetZoom()">Reset Zoom</button>
                 </div>
                 <canvas id="chartWealth"></canvas>
-                <canvas id="chartPct" style="display:none;"></canvas>
             </div>
-        </div>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Component</th>
-                <th>Master Cost Basis</th>
-                <th>Master Current Value</th>
-                <th>Capital Invested</th>
-                <th>Notional Exposure</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-        <tfoot id="tableFoot" style="background:#f8fafc; font-weight:bold; border-top:2px solid #e2e8f0;"></tfoot>
-    </table>
-</div>
-
-<div id="histModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeHistModal()">&times;</span>
-        <h2 style="margin-top:0; color:#0f172a;">50-Year Market Returns (Educational)</h2>
-        <div style="font-size:0.85rem; color:#64748b; margin-bottom:20px;">Select an asset class on the left to view annual returns 1974-2024.</div>
-        
-        <div class="hist-grid">
-            <div>
-                <button class="asset-btn active" onclick="switchHistChart('SPX', this)">
-                    <span>🇺🇸 S&P 500 (Price Return)</span>
-                    <span class="asset-ret" style="color:#10b981;">9.2%</span>
-                </button>
-                <button class="asset-btn" onclick="switchHistChart('PE', this)">
-                    <span>🏢 Private Equity</span>
-                    <span class="asset-ret" style="color:#8b5cf6;">14.1%</span>
-                </button>
-                <button class="asset-btn" onclick="switchHistChart('BONDS', this)">
-                    <span>📉 US Bonds (Agg)</span>
-                    <span class="asset-ret" style="color:#3b82f6;">6.2%</span>
-                </button>
-                <button class="asset-btn" onclick="switchHistChart('GOLD', this)">
-                    <span>🥇 Gold</span>
-                    <span class="asset-ret" style="color:#f59e0b;">7.8%</span>
-                </button>
-            </div>
-            <div>
-                <h3 id="histChartTitle" style="margin-top:0;">S&P 500 Annual Returns (Price Only)</h3>
-                <div style="height:350px;">
-                    <canvas id="chartModal"></canvas>
-                </div>
-            </div>
-        </div>
-        <div style="margin-top:20px; padding:10px; background:#fef2f2; color:#991b1b; border:1px solid #fecaca; border-radius:6px; font-size:0.85rem;">
-            <strong>Disclaimer:</strong> Data may not be fully accurate and is intended for educational demonstrations only. Please verify with official sources.
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Asset Class (10Y Projection)</th>
+                        <th>Initial Investment</th>
+                        <th>Final Value</th>
+                        <th>Total Return</th>
+                        <th>CAGR / IRR</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    </tbody>
+            </table>
         </div>
     </div>
 </div>
 
 <script>
-    // --- Global State ---
-    let PORTFOLIO = []; 
-    let TOTAL_MASTER_COST = 0;
-    
-    // Default Demo Data
-    const DEMO_DATA = [
-        { Type: 'Credit', CostBasis: 3489323.60, CurrentValue: 3489323.60, Strike: null, Quantity: null, ExpirationDate: null },
-        { Type: 'Option', CostBasis: 2699992.87, CurrentValue: 2309556.49, Strike: 563.22, Quantity: 24359, ExpirationDate: '2036-01-07' },
-        { Type: 'Option', CostBasis: 1100000.00, CurrentValue: 816926.67, Strike: 560.50, Quantity: 9512, ExpirationDate: '2036-01-30' }
-    ];
-
-    // --- Educational Data (50Y) ---
-    // S&P 500 Price Return (Approx) - 1974-2024
-    const SPX_PRICE_50Y = [
-        -29.7, 31.5, 19.1, -11.5, 1.1, 12.3, 25.8, -9.7, 14.8, 17.3, // 74-83
-        1.4, 26.3, 14.6, 2.0, 12.4, 27.3, -6.6, 26.3, 4.5, 7.1, // 84-93
-        -1.5, 34.1, 20.3, 31.0, 26.7, 19.5, -10.1, -13.0, -23.4, 26.4, // 94-03
-        9.0, 3.0, 13.6, 3.5, -38.5, 23.5, 12.8, 0.0, 13.4, 29.6, // 04-13
-        11.4, -0.7, 9.5, 19.4, -6.2, 28.9, 16.3, 26.9, -19.4, 24.2, // 14-23
-        24.0 // 2024
-    ];
-
-    // US Bonds (Bloomberg Agg or proxy)
-    const BONDS_50Y = [
-        5.2, 7.8, 15.6, 3.0, 1.4, 2.3, 2.7, 6.3, 32.6, 8.4, // 74-83 (Proxies)
-        15.1, 22.1, 15.3, 2.8, 7.9, 14.5, 8.9, 16.0, 7.4, 9.7, // 84-93
-        -2.9, 18.5, 3.6, 9.7, 8.7, -0.8, 11.6, 8.4, 10.3, 4.1, // 94-03
-        4.3, 2.4, 4.3, 7.0, 5.2, 5.9, 6.5, 7.8, 4.2, -2.0, // 04-13
-        6.0, 0.5, 2.6, 3.5, 0.0, 8.7, 7.5, -1.5, -13.0, 5.5, // 14-23
-        4.5 // 2024
-    ];
-
-    // Gold (Annual % Change USD)
-    const GOLD_50Y = [
-        72.0, -25.0, -4.0, 23.0, 37.0, 126.0, 12.5, -32.0, -13.0, -15.0, // 74-83
-        -19.0, 6.0, 20.0, 24.0, -15.0, -2.0, -2.0, -10.0, -6.0, 17.0, // 84-93
-        -2.0, 1.0, -4.0, -21.0, -1.0, -1.0, -6.0, 1.0, 24.0, 20.0, // 94-03
-        5.0, 18.0, 23.0, 31.0, 5.0, 24.0, 29.0, 10.0, 7.0, -28.0, // 04-13
-        -1.0, -10.0, 8.0, 13.0, -1.0, 18.0, 25.0, -3.0, -0.3, 13.1, // 14-23
-        25.0 // 2024
-    ];
-
-    // Private Equity (Cambridge Associates US PE Index Proxy - Smoothed Actuals)
-    const PE_50Y = [
-        12.5, 18.2, 28.4, 12.1, 15.0, 20.2, 28.5, 2.1, 19.3, 18.2, // 74-83 (Proxy Era)
-        10.5, 29.4, 17.8, 8.2, 18.5, 25.1, 4.2, 32.1, 12.3, 15.6, // 84-93
-        9.2, 45.2, 28.3, 35.1, 22.4, 30.2, -0.5, -12.2, -1.8, 32.4, // 94-03
-        15.6, 26.2, 22.8, 17.2, -26.4, 14.1, 23.8, 9.8, 14.5, 21.6, // 04-13
-        13.2, 6.8, 11.2, 19.8, 10.1, 18.6, 23.4, 39.0, -4.2, 5.8, // 14-23
-        10.0 // 2024 Est
-    ];
-
-    const HIST_YEARS = Array.from({length: 51}, (_, i) => 1974 + i);
-    const ASSET_DATA = {
-        'SPX': { label: 'S&P 500 (Price Return)', color: '#10b981', data: SPX_PRICE_50Y },
-        'PE': { label: 'Private Equity (Proxy)', color: '#8b5cf6', data: PE_50Y },
-        'BONDS': { label: 'US Bonds (Agg)', color: '#3b82f6', data: BONDS_50Y },
-        'GOLD': { label: 'Gold', color: '#f59e0b', data: GOLD_50Y }
-    };
-
-    let chartWealth = null;
-    let chartPct = null;
-    let chartModal = null;
-    let currentTab = 'wealth';
-
+    // --- UI Helpers ---
     const fmt = (n) => new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 }).format(n);
-    function updateVal(id, val) { document.getElementById(id).innerText = val + (id.includes('Hist') ? '' : '%'); }
+    function updateVal(id, val) { document.getElementById(id).innerText = val + '%'; }
+    
+    // --- Chart Globals ---
+    let chartWealth = null;
 
-    // --- Modal Logic ---
-    function openHistModal() {
-        document.getElementById('histModal').style.display = 'block';
-        setTimeout(() => switchHistChart('SPX', document.querySelector('.asset-btn')), 100);
-    }
-    function closeHistModal() {
-        document.getElementById('histModal').style.display = 'none';
-    }
-    window.onclick = function(event) {
-        if (event.target == document.getElementById('histModal')) {
-            closeHistModal();
+    // --- Main Logic: Wire UI to External Calculator ---
+    function updateDashboard() {
+        // 1. Gather Inputs
+        const inv = parseFloat(document.getElementById('inpInv').value);
+        const spot = parseFloat(document.getElementById('inpSpot').value);
+        const useFees = document.getElementById('checkFees').checked;
+        
+        const inputs = {
+            investment: inv,
+            currentSpot: spot, 
+            spxPriceReturn: parseFloat(document.getElementById('inpMkt').value),
+            spxDivYield: parseFloat(document.getElementById('inpDiv').value),
+            creditYield: parseFloat(document.getElementById('inpBcred').value),
+            volatility: parseFloat(document.getElementById('inpVol').value),
+            mgmtFee: useFees ? parseFloat(document.getElementById('inpMgmt').value) : 0,
+            carryFee: useFees ? parseFloat(document.getElementById('selCarry').value) : 0,
+            riskFreeRate: 4.0,
+            years: 10
+        };
+
+        // 2. Call External Logic
+        const data = calculateGSIProjection(inputs);
+        const series = data.series;
+        const metrics = data.metrics;
+
+        // 3. Update KPI Grid
+        document.getElementById('kpiCap').innerText = fmt(inv);
+        document.getElementById('kpiNotional').innerText = fmt(metrics.initialNotional);
+        document.getElementById('kpiNav').innerText = fmt(series.gsi[0]);
+        document.getElementById('kpiProj').innerText = fmt(metrics.finalValue);
+        
+        const finalSpx = series.spx[series.spx.length-1];
+        document.getElementById('kpiSpxRet').innerText = fmt(finalSpx);
+
+        const alpha = metrics.finalValue - finalSpx;
+        const alphaPct = ((metrics.finalValue / finalSpx) - 1) * 100;
+        
+        const alphaBox = document.getElementById('kpiAlphaBox');
+        const alphaTxt = document.getElementById('kpiAlpha');
+        const alphaSub = document.getElementById('kpiAlphaPct');
+        
+        alphaTxt.innerText = (alpha >= 0 ? "+" : "") + fmt(alpha);
+        alphaSub.innerText = (alphaPct >= 0 ? "+" : "") + alphaPct.toFixed(1) + "%";
+        
+        if (alpha >= 0) {
+            alphaBox.style.background = '#f0fdf4'; alphaBox.style.borderColor = '#bbf7d0';
+            alphaTxt.style.color = '#166534'; alphaSub.style.color = '#166534';
+        } else {
+            alphaBox.style.background = '#fef2f2'; alphaBox.style.borderColor = '#fecaca';
+            alphaTxt.style.color = '#dc2626'; alphaSub.style.color = '#dc2626';
         }
+
+        // 4. Update Charts
+        renderWealthChart(series.labels, series.gsi, series.spx, series.credit, series.options, series.static);
+
+        // 5. Update Table
+        updateTable(inv, metrics.finalValue, finalSpx, series.pe[series.pe.length-1], series.bonds[series.bonds.length-1]);
     }
 
-    function switchHistChart(key, btn) {
-        document.querySelectorAll('.asset-btn').forEach(b => b.classList.remove('active'));
-        if(btn) btn.classList.add('active');
+    function updateTable(initial, gsiFinal, spxFinal, peFinal, bondFinal) {
+        const row = (name, final) => {
+            const ret = ((final/initial)-1)*100;
+            const irr = (Math.pow(final/initial, 0.1)-1)*100;
+            return `<tr>
+                <td style="text-align:left; font-weight:600;">${name}</td>
+                <td>${fmt(initial)}</td>
+                <td>${fmt(final)}</td>
+                <td style="color:${ret>=0?'#166534':'#dc2626'}">${ret.toFixed(1)}%</td>
+                <td>${irr.toFixed(1)}%</td>
+            </tr>`;
+        };
 
-        const asset = ASSET_DATA[key];
-        document.getElementById('histChartTitle').innerText = `${asset.label} Annual Returns (1974-2024)`;
+        const html = 
+            row('GSI Strategy', gsiFinal) +
+            row('S&P 500 ETF', spxFinal) +
+            row('Private Equity (Proxy)', peFinal) +
+            row('US Agg Bonds', bondFinal);
+            
+        document.getElementById('tableBody').innerHTML = html;
+    }
 
-        const ctx = document.getElementById('chartModal').getContext('2d');
-        if(chartModal) chartModal.destroy();
-
-        chartModal = new Chart(ctx, {
-            type: 'bar',
+    // --- Chart Rendering ---
+    function renderWealthChart(labels, gsi, spx, credit, options, stat) {
+        const ctx = document.getElementById('chartWealth').getContext('2d');
+        if(chartWealth) chartWealth.destroy();
+        
+        chartWealth = new Chart(ctx, {
+            type: 'line',
             data: {
-                labels: HIST_YEARS,
-                datasets: [{
-                    label: 'Annual Return (%)',
-                    data: asset.data,
-                    backgroundColor: asset.data.map(v => v >= 0 ? asset.color : '#ef4444'),
-                    borderRadius: 2
-                }]
+                labels: labels,
+                datasets: [
+                    { label: 'GSI Strategy', data: gsi, borderColor: '#0f172a', backgroundColor: 'rgba(15, 23, 42, 0.05)', borderWidth: 3, fill: true, pointRadius: 0 },
+                    { label: 'S&P 500 ETF', data: spx, borderColor: '#94a3b8', borderWidth: 2, borderDash: [5, 5], pointRadius: 0 },
+                    // Hidden components by default, toggleable via legend
+                    { label: 'Credit Floor', data: credit, borderColor: '#10b981', borderWidth: 1, pointRadius: 0, hidden: true },
+                    { label: 'Option Value', data: options, borderColor: '#ef4444', borderWidth: 1, pointRadius: 0, hidden: true },
+                    { label: 'Intrinsic Value', data: stat, borderColor: '#9333ea', borderWidth: 1, borderDash: [2,2], pointRadius: 0, hidden: true }
+                ]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { 
-                    y: { grid: { color: '#f1f5f9' }, title: { display:true, text:'Return %' } }, 
-                    x: { grid: { display:false }, ticks:{ maxTicksLimit: 10 } } 
-                },
-                plugins: { legend: {display:false} }
-            }
+            options: commonChartOptions('$')
         });
     }
 
-    // --- Main Logic ---
+    function commonChartOptions(format) {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: { grid: { display: false } },
+                y: { 
+                    grid: { color: '#f1f5f9' },
+                    ticks: { callback: (v) => format==='$' ? (v>=1000000 ? '$'+(v/1000000).toFixed(1)+'M' : '$'+(v/1000).toFixed(0)+'k') : v }
+                }
+            },
+            plugins: {
+                zoom: { zoom: { wheel: { enabled: true }, drag: { enabled: true }, mode: 'x' } },
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + fmt(context.raw);
+                        }
+                    }
+                }
+            }
+        };
+    }
+
     function toggleFees() {
         const checked = document.getElementById('checkFees').checked;
         const panel = document.getElementById('feeControls');
@@ -480,360 +404,16 @@
             badge.innerText = 'Displaying: GROSS';
             badge.className = 'gross-badge';
         }
-        calc();
-    }
-
-    // --- FORCE DEMO DATA (FIXED FOR LOCAL FILE) ---
-    function fetchPortfolio() {
-        const statusBox = document.getElementById('statusBox');
-        
-        // 1. Try to fetch CSV (works if on server)
-        Papa.parse('portfolio.csv', {
-            download: true,
-            header: true,
-            dynamicTyping: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                if(results.data && results.data.length > 0) {
-                    processData(results.data);
-                    statusBox.className = 'status-box status-success';
-                    statusBox.innerText = '✅ Loaded portfolio.csv';
-                } else {
-                    // Fallback if empty
-                    loadDemo();
-                }
-            },
-            error: function() {
-                // Fallback if fetch fails (local file)
-                loadDemo();
-            }
-        });
-
-        // 2. TIMEOUT SAFETY: If Papa Parse hangs (common on local file), force demo after 500ms
-        setTimeout(() => {
-            if(PORTFOLIO.length === 0) loadDemo();
-        }, 500);
-    }
-
-    function loadDemo() {
-        const statusBox = document.getElementById('statusBox');
-        statusBox.className = 'status-box status-success'; // showing green for demo is friendlier
-        statusBox.innerText = '✅ Loaded Demo Data';
-        processData(DEMO_DATA);
-    }
-
-    function processData(rawData) {
-        // Prevent double loading
-        if(PORTFOLIO.length > 0) return;
-
-        PORTFOLIO = rawData.filter(row => row.Type && row.CostBasis).map(row => ({
-            Type: row.Type,
-            CostBasis: parseFloat(row.CostBasis),
-            CurrentValue: parseFloat(row.CurrentValue),
-            Strike: row.Strike ? parseFloat(row.Strike) : null,
-            Quantity: row.Quantity ? parseFloat(row.Quantity) : null,
-            ExpirationDate: row.ExpirationDate
-        }));
-        calc();
-    }
-
-    function N(z) {
-        const b1=0.319381530, b2=-0.356563782, b3=1.781477937, b4=-1.821255978, b5=1.330274429, p=0.2316419, c=0.39894228;
-        if(z>6.0) return 1.0; if(z<-6.0) return 0.0;
-        const a=Math.abs(z), t=1.0/(1.0+a*p), b=c*Math.exp((-z*z)/2.0);
-        let n=((((b5*t+b4)*t+b3)*t+b2)*t+b1)*t;
-        n=1.0-b*n; return z<0.0 ? 1.0-n : n;
-    }
-    function bsPrice(S, K, T, r, v) {
-        if (T <= 0) return Math.max(0, S - K);
-        const d1 = (Math.log(S/K) + (0.5*v*v)*T) / (v*Math.sqrt(T));
-        const d2 = d1 - v*Math.sqrt(T);
-        return Math.exp(-r*T) * (S*N(d1) - K*N(d2)); 
-    }
-
-    function calc() {
-        if(!PORTFOLIO.length) return;
-
-        const inv = parseFloat(document.getElementById('inpInv').value);
-        const spot = parseFloat(document.getElementById('inpSpot').value);
-        const evalDateStr = document.getElementById('evalDate').value;
-        const evalDate = new Date(evalDateStr);
-
-        const gTotal = parseFloat(document.getElementById('inpMkt').value)/100;
-        const gDiv = parseFloat(document.getElementById('inpDiv').value)/100;
-        const gPrice = gTotal - gDiv; 
-
-        const gBcred = parseFloat(document.getElementById('inpBcred').value)/100;
-        const vol = parseFloat(document.getElementById('inpVol').value)/100;
-        const r = 0.04; 
-
-        const useFees = document.getElementById('checkFees').checked;
-        const carryPct = parseFloat(document.getElementById('selCarry').value)/100;
-        const mgmtPct = parseFloat(document.getElementById('inpMgmt').value)/100;
-
-        let mCostCredit = 0, mValCredit = 0;
-        let mCostOpt = 0, mValOpt = 0;
-        let mNotionalOpt = 0;
-
-        PORTFOLIO.forEach(row => {
-            if(row.Type === 'Credit') {
-                mCostCredit += row.CostBasis;
-                mValCredit += row.CurrentValue;
-            } else if (row.Type === 'Option') {
-                mCostOpt += row.CostBasis;
-                mValOpt += row.CurrentValue;
-                mNotionalOpt += (row.Quantity * spot);
-            }
-        });
-
-        TOTAL_MASTER_COST = mCostCredit + mCostOpt;
-        const ratio = inv / TOTAL_MASTER_COST;
-
-        const uValCredit = mValCredit * ratio;
-        const uCostCredit = mCostCredit * ratio;
-        const uValOpt = mValOpt * ratio;
-        const uCostOpt = mCostOpt * ratio;
-        
-        const uNotionalOpt = mNotionalOpt * ratio;
-        const uNotionalTotal = uNotionalOpt + uValCredit;
-        const optionsLeverage = uNotionalOpt / uCostOpt; 
-
-        const navInit = uValCredit + uValOpt;
-
-        document.getElementById('kpiCap').innerText = fmt(inv);
-        document.getElementById('kpiNotional').innerText = fmt(uNotionalTotal);
-        document.getElementById('kpiNav').innerText = fmt(navInit);
-
-        document.getElementById('tableBody').innerHTML = `
-            <tr>
-                <td>Credit</td>
-                <td>${fmt(mCostCredit)}</td>
-                <td>${fmt(mValCredit)}</td>
-                <td>${fmt(uCostCredit)}</td>
-                <td>${fmt(uValCredit)}</td>
-            </tr>
-            <tr>
-                <td>SPXFP Options</td>
-                <td>${fmt(mCostOpt)}</td>
-                <td>${fmt(mValOpt)}</td>
-                <td>${fmt(uCostOpt)}</td>
-                <td style="font-weight:bold; color:#3b82f6;">${fmt(uNotionalOpt)}</td>
-            </tr>
-        `;
-        document.getElementById('tableFoot').innerHTML = `
-            <tr>
-                <td>TOTAL</td>
-                <td>${fmt(TOTAL_MASTER_COST)}</td>
-                <td>${fmt(mValCredit + mValOpt)}</td>
-                <td>${fmt(inv)}</td>
-                <td>${fmt(uNotionalTotal)}</td>
-            </tr>
-        `;
-
-        const labels = [];
-        const dPort = [], dBench = [], dStatic = [], dCredit = [], dOptions = [];
-        const pPort = [], pBench = [], pCredit = [], pOptions = [];
-
-        labels.push(evalDate);
-        dPort.push(navInit);
-        dBench.push(inv);
-        dStatic.push(0); 
-        dCredit.push(uValCredit);
-        dOptions.push(uValOpt);
-
-        pPort.push((navInit/inv - 1)*100);
-        pBench.push(0);
-        pCredit.push(0);
-        pOptions.push((uValOpt/uCostOpt - 1)*100);
-
-        for(let q=1; q<=40; q++) {
-            const t = q * 0.25;
-            const dt = new Date(evalDate); dt.setMonth(dt.getMonth() + q*3);
-            
-            const S_fut = spot * Math.pow(1+gPrice, t);
-            const valCreditGross = uValCredit * Math.pow(1+gBcred, t);
-            
-            let valOptGross = 0;
-            let valOptIntrinsic = 0; 
-
-            PORTFOLIO.filter(r => r.Type === 'Option').forEach(opt => {
-                const expDate = new Date(opt.ExpirationDate);
-                let T_rem = (expDate - dt) / (1000 * 60 * 60 * 24 * 365.25);
-                if (T_rem < 0) T_rem = 0;
-                
-                const price = bsPrice(S_fut, opt.Strike, T_rem, r, vol);
-                valOptGross += (price * opt.Quantity * ratio);
-                valOptIntrinsic += Math.max(0, S_fut - opt.Strike) * opt.Quantity * ratio;
-            });
-
-            let finalPort = valCreditGross + valOptGross;
-            let finalCredit = valCreditGross;
-            let finalOpt = valOptGross;
-
-            if (useFees) {
-                const mgmtDrag = Math.pow(1 - mgmtPct, t);
-                finalCredit *= mgmtDrag;
-                finalOpt *= mgmtDrag;
-                finalPort = finalCredit + finalOpt;
-
-                const profit = finalPort - inv;
-                if (profit > 0) {
-                    const carryAmt = profit * carryPct;
-                    finalPort -= carryAmt; 
-                    const creditShare = finalCredit / (finalCredit + finalOpt);
-                    finalCredit -= (carryAmt * creditShare);
-                    finalOpt -= (carryAmt * (1-creditShare));
-                }
-            }
-
-            const valBench = inv * Math.pow(1+gTotal, t);
-
-            labels.push(dt);
-            dPort.push(finalPort);
-            dBench.push(valBench);
-            dStatic.push(valOptIntrinsic);
-            dCredit.push(finalCredit);
-            dOptions.push(finalOpt);
-
-            pPort.push(((finalPort/inv)-1)*100);
-            pBench.push(((valBench/inv)-1)*100);
-            pCredit.push(((finalCredit/uValCredit)-1)*100);
-            pOptions.push(((finalOpt/uCostOpt)-1)*100);
-        }
-
-        const finalPort = dPort[dPort.length-1];
-        const finalBench = dBench[dBench.length-1];
-        const alpha = finalPort - finalBench;
-        const alphaPct = ((finalPort / finalBench) - 1) * 100;
-
-        document.getElementById('kpiProj').innerText = fmt(finalPort);
-        document.getElementById('kpiSpxRet').innerText = fmt(finalBench);
-        
-        const alphaBox = document.getElementById('kpiAlphaBox');
-        const alphaTxt = document.getElementById('kpiAlpha');
-        const alphaSub = document.getElementById('kpiAlphaPct');
-        
-        alphaTxt.innerText = (alpha >= 0 ? "+" : "") + fmt(alpha);
-        alphaSub.innerText = (alphaPct >= 0 ? "+" : "") + alphaPct.toFixed(1) + "%";
-
-        if (alpha >= 0) {
-            alphaBox.style.background = '#f0fdf4';
-            alphaBox.style.borderColor = '#bbf7d0';
-            alphaTxt.style.color = '#166534';
-            alphaSub.style.color = '#166534';
-        } else {
-            alphaBox.style.background = '#fef2f2';
-            alphaBox.style.borderColor = '#fecaca';
-            alphaTxt.style.color = '#dc2626';
-            alphaSub.style.color = '#dc2626';
-        }
-
-        renderWealthChart(labels, dPort, dBench, dStatic, dCredit, dOptions);
-        renderPctChart(labels, pPort, pBench, pCredit, pOptions);
-    }
-
-    function renderWealthChart(lbl, port, bench, stat, cred, opts) {
-        const ctx = document.getElementById('chartWealth').getContext('2d');
-        if(chartWealth) chartWealth.destroy();
-        chartWealth = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: lbl,
-                datasets: [
-                    { label: 'NAV Value', data: port, borderColor: '#0f172a', backgroundColor: 'rgba(15, 23, 42, 0.05)', borderWidth: 3, fill: true, pointRadius: 0 },
-                    { label: 'S&P 500 ETF', data: bench, borderColor: '#94a3b8', borderWidth: 2, borderDash: [2, 2], pointRadius: 0 },
-                    { label: 'Static Return (Intrinsic)', data: stat, borderColor: '#9333ea', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, hidden: true },
-                    { label: 'Credit', data: cred, borderColor: '#10b981', borderWidth: 1.5, pointRadius: 0, hidden: true },
-                    { label: 'Options', data: opts, borderColor: '#ef4444', borderWidth: 1.5, pointRadius: 0, hidden: true }
-                ]
-            },
-            options: commonOptions('$')
-        });
-    }
-
-    function renderPctChart(lbl, port, bench, cred, opts) {
-        const ctx = document.getElementById('chartPct').getContext('2d');
-        if(chartPct) chartPct.destroy();
-        chartPct = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: lbl,
-                datasets: [
-                    { label: 'NAV Value', data: port, borderColor: '#0f172a', borderWidth: 3, pointRadius: 0 },
-                    { label: 'S&P 500 ETF', data: bench, borderColor: '#94a3b8', borderWidth: 2, borderDash: [2, 2], pointRadius: 0 },
-                    { label: 'Options', data: opts, borderColor: '#ef4444', borderWidth: 1.5, pointRadius: 0, hidden: true },
-                    { label: 'Credit', data: cred, borderColor: '#10b981', borderWidth: 1.5, pointRadius: 0, hidden: true }
-                ]
-            },
-            options: commonOptions('IRR')
-        });
-    }
-
-    function commonOptions(type) {
-        return {
-            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-            scales: {
-                x: { type: 'time', time: { unit: 'year' }, grid: { display: false } },
-                y: { ticks: { callback: (v) => type==='$' ? (v>=1000000 ? '$'+(v/1000000).toFixed(1)+'M' : '$'+(v/1000).toFixed(0)+'k') : v.toFixed(0)+'%' }, grid: { color: '#f1f5f9' } }
-            },
-            plugins: {
-                zoom: { zoom: { wheel: { enabled: true }, drag: { enabled: true, backgroundColor:'rgba(37, 99, 235, 0.1)' }, mode: 'x' } },
-                tooltip: { 
-                    backgroundColor: 'rgba(255,255,255,0.95)', titleColor: '#0f172a', bodyColor: '#334155', borderColor: '#e2e8f0', borderWidth: 1, padding: 12, 
-                    callbacks: { 
-                        label: (c) => {
-                            let val = c.raw;
-                            if (type === 'IRR') {
-                                // Robust IRR Calculation (v35 Fix)
-                                let currentTime = c.parsed.x;
-                                let startTime = c.chart.data.labels[0].getTime();
-                                let diffTime = currentTime - startTime;
-                                let t = diffTime / (1000 * 60 * 60 * 24 * 365.25); 
-
-                                if(t < 0.1) return ` ${c.dataset.label}: 0.0%`;
-
-                                let totalRet = 1 + (val / 100);
-                                if(totalRet <= 0) return ` ${c.dataset.label}: -100%`;
-
-                                let irr = (Math.pow(totalRet, 1/t) - 1) * 100;
-                                return ` ${c.dataset.label}: ${irr.toFixed(2)}% (Ann. IRR)`;
-                            } else {
-                                return ` ${c.dataset.label}: ${fmt(val)}`;
-                            }
-                        }
-                    } 
-                },
-                legend: { 
-                    position: 'top', 
-                    labels: { usePointStyle: true, boxWidth: 8 },
-                    onClick: function(e, legendItem, legend) {
-                        const index = legendItem.datasetIndex;
-                        const ci = legend.chart;
-                        if (ci.isDatasetVisible(index)) { ci.hide(index); legendItem.hidden = true; } 
-                        else { ci.show(index); legendItem.hidden = false; }
-                    }
-                }
-            }
-        };
-    }
-
-    function switchTab(tab) {
-        currentTab = tab;
-        document.getElementById('btnWealth').className = tab === 'wealth' ? 'tab-btn active' : 'tab-btn';
-        document.getElementById('btnPct').className = tab === 'pct' ? 'tab-btn active' : 'tab-btn';
-        
-        document.getElementById('chartWealth').style.display = tab === 'wealth' ? 'block' : 'none';
-        document.getElementById('chartPct').style.display = tab === 'pct' ? 'block' : 'none';
+        updateDashboard();
     }
 
     function resetZoom() {
-        if(currentTab === 'wealth' && chartWealth) chartWealth.resetZoom();
-        if(currentTab === 'pct' && chartPct) chartPct.resetZoom();
+        if(chartWealth) chartWealth.resetZoom();
     }
 
-    window.onload = fetchPortfolio;
+    // Init
+    window.onload = updateDashboard;
 </script>
 
 </body>
 </html>
-
