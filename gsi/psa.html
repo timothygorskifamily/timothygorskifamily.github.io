@@ -314,15 +314,6 @@
         { Type: 'Option', CostBasis: 1100000.00, CurrentValue: 816926.67, Strike: 560.50, Quantity: 9512, ExpirationDate: '2036-01-30' }
     ];
 
-    // ACCURATE TOTAL RETURNS (for Dashboard Backtest logic - 10Y)
-    const HISTORICAL_RETURNS = {
-        2006: 0.1579, 2007: 0.0549, 2008: -0.3700, 2009: 0.2646,
-        2010: 0.1506, 2011: 0.0211, 2012: 0.1600, 2013: 0.3239, 2014: 0.1369,
-        2015: 0.0138, 2016: 0.1196, 2017: 0.2183, 2018: -0.0438, 2019: 0.3149,
-        2020: 0.1840, 2021: 0.2871, 2022: -0.1811, 2023: 0.2629, 2024: 0.2502,
-        2025: 0.1000 
-    };
-
     // --- Educational Data (50Y) ---
     // S&P 500 Price Return (Approx) - 1974-2024
     const SPX_PRICE_50Y = [
@@ -447,8 +438,11 @@
         calc();
     }
 
+    // --- FORCE DEMO DATA (FIXED FOR LOCAL FILE) ---
     function fetchPortfolio() {
         const statusBox = document.getElementById('statusBox');
+        
+        // 1. Try to fetch CSV (works if on server)
         Papa.parse('portfolio.csv', {
             download: true,
             header: true,
@@ -459,20 +453,34 @@
                     processData(results.data);
                     statusBox.className = 'status-box status-success';
                     statusBox.innerText = '✅ Loaded portfolio.csv';
-                } else { useDemoData(); }
+                } else {
+                    // Fallback if empty
+                    loadDemo();
+                }
             },
-            error: function() { useDemoData(); }
+            error: function() {
+                // Fallback if fetch fails (local file)
+                loadDemo();
+            }
         });
+
+        // 2. TIMEOUT SAFETY: If Papa Parse hangs (common on local file), force demo after 500ms
+        setTimeout(() => {
+            if(PORTFOLIO.length === 0) loadDemo();
+        }, 500);
     }
 
-    function useDemoData() {
+    function loadDemo() {
         const statusBox = document.getElementById('statusBox');
-        statusBox.className = 'status-box status-error';
-        statusBox.innerText = '⚠️ CSV Not Found. Using Demo Data.';
+        statusBox.className = 'status-box status-success'; // showing green for demo is friendlier
+        statusBox.innerText = '✅ Loaded Demo Data';
         processData(DEMO_DATA);
     }
 
     function processData(rawData) {
+        // Prevent double loading
+        if(PORTFOLIO.length > 0) return;
+
         PORTFOLIO = rawData.filter(row => row.Type && row.CostBasis).map(row => ({
             Type: row.Type,
             CostBasis: parseFloat(row.CostBasis),
@@ -677,7 +685,6 @@
 
         renderWealthChart(labels, dPort, dBench, dStatic, dCredit, dOptions);
         renderPctChart(labels, pPort, pBench, pCredit, pOptions);
-        generateHistory(inv);
     }
 
     function renderWealthChart(lbl, port, bench, stat, cred, opts) {
@@ -714,85 +721,6 @@
                 ]
             },
             options: commonOptions('IRR')
-        });
-    }
-
-    function generateHistory(endCapital) {
-        const ctx = document.getElementById('chartHistory').getContext('2d');
-        if(chartHistory) chartHistory.destroy();
-
-        // 1. Hardcode 10 Year Lookback
-        const yearsBack = 10;
-        const evalDate = new Date(document.getElementById('evalDate').value);
-        
-        // 2. Start Date (e.g., Feb 2016 if Eval is Feb 2026)
-        const startDate = new Date(evalDate);
-        startDate.setFullYear(evalDate.getFullYear() - yearsBack);
-
-        // Build array of dates from Start -> End
-        let dates = [];
-        let curr = new Date(startDate);
-        while(curr <= evalDate) {
-            dates.push(new Date(curr));
-            curr.setMonth(curr.getMonth() + 1);
-        }
-
-        // 3. Simulate Forward from 100 base index
-        let spxIndex = [100];
-        let stratIndex = [100];
-        
-        const credYieldMonthly = Math.pow(1.095, 1/12) - 1; 
-        const optCostMonthly = 0.0015; 
-
-        // Loop Forward
-        for(let i=1; i<dates.length; i++) {
-            const d = dates[i];
-            const y = d.getFullYear();
-            
-            // Get accurate historical return
-            let annualRet = HISTORICAL_RETURNS[y];
-            if(annualRet === undefined) annualRet = 0.08; 
-
-            const monthlyRet = Math.pow(1 + annualRet, 1/12) - 1;
-
-            // SPX
-            const prevSpx = spxIndex[i-1];
-            spxIndex.push(prevSpx * (1 + monthlyRet));
-
-            // Strategy
-            const prevStrat = stratIndex[i-1];
-            const priceRet = monthlyRet - 0.0011; // 1.1% div proxy
-            
-            let stratRet = 0;
-            if(priceRet > 0) {
-                stratRet = (priceRet * 2.2) - optCostMonthly + credYieldMonthly;
-            } else {
-                stratRet = (priceRet * 0.6) - optCostMonthly + credYieldMonthly;
-            }
-            stratIndex.push(prevStrat * (1 + stratRet));
-        }
-
-        // Backward Scaling
-        const stratFinal = stratIndex[stratIndex.length-1];
-        const scaleFactor = endCapital / stratFinal;
-        
-        const finalStrat = stratIndex.map(v => v * scaleFactor);
-        const stratStartVal = finalStrat[0];
-        
-        // Re-base SPX to START at same capital
-        const spxScale = stratStartVal / spxIndex[0];
-        const finalSpx = spxIndex.map(v => v * spxScale);
-
-        chartHistory = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: dates,
-                datasets: [
-                    { label: 'Hedge Fund Strategy', data: finalStrat, borderColor: '#0f172a', borderWidth: 2, pointRadius: 0, backgroundColor: 'rgba(15, 23, 42, 0.05)', fill:true },
-                    { label: 'S&P 500 ETF', data: finalSpx, borderColor: '#94a3b8', borderWidth: 2, pointRadius: 0 }
-                ]
-            },
-            options: commonOptions('$')
         });
     }
 
