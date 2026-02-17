@@ -333,9 +333,27 @@
                 <p class="mb-2"><strong>Contact Us:</strong> info@gorskifamilyoffice.com</p>
             </div>
         </div>
-        <div class="border-t border-gray-800 pt-8 text-xs text-gray-500 text-justify">
+        
+        <div class="border-t border-gray-800 pt-8 mt-8 text-xs text-gray-500 text-justify space-y-4">
+            <p class="font-bold text-gray-400 uppercase tracking-wide">Important Disclosures</p>
+            
             <p>
-                DISCLAIMER: This interactive tool is for illustrative purposes only. The "Simulated Returns" are hypothetical and do not represent actual trading results.
+                <strong>Not an Offer to Sell:</strong> This interactive tool and the information presented herein are for informational purposes only and do not constitute an offer to sell or a solicitation of an offer to buy any securities or investment interests. Any such offer would only be made pursuant to definitive subscription documents and a confidential private placement memorandum, which would describe the specific risks and terms of such an investment.
+            </p>
+
+            <p>
+                <strong>Hypothetical Performance:</strong> The "Simulated Returns," "Historical Backtests," and projected scenarios presented on this website are hypothetical in nature and do not represent actual trading results. Hypothetical performance results have many inherent limitations, some of which are described below. No representation is being made that any account will or is likely to achieve profits or losses similar to those shown. In fact, there are frequently sharp differences between hypothetical performance results and the actual results subsequently achieved by any particular trading program. One of the limitations of hypothetical performance results is that they are generally prepared with the benefit of hindsight. In addition, hypothetical trading does not involve financial risk, and no hypothetical trading record can completely account for the impact of financial risk in actual trading.
+            </p>
+
+            <p>
+                <strong>Risk Factors:</strong> Investment in the GSI Strategy involves a high degree of risk and is suitable only for sophisticated investors. 
+                (1) <strong>Private Credit Risk:</strong> Investments in private credit are illiquid, speculative, and involve the risk of loss of principal. There is no guarantee that the projected yields (e.g., 9-11%) will be achieved or that defaults will be minimized. 
+                (2) <strong>Derivatives Risk:</strong> The strategy utilizes long-dated Over-the-Counter (OTC) options. Options are highly levered instruments; while the strategy aims to limit downside to the premium paid, market volatility and counterparty risk can significantly impact performance. 
+                (3) <strong>Market Risk:</strong> The strategy's equity upside is dependent on the performance of the S&P 500 index.
+            </p>
+
+            <p>
+                <strong>Professional Advice:</strong> The information contained herein is not intended to provide, and should not be relied upon for, accounting, legal, or tax advice or investment recommendations. You should consult your tax, legal, financial, or other advisors about the issues discussed herein.
             </p>
         </div>
     </div>
@@ -355,7 +373,7 @@
         switch(stepNum) {
             case 1: message = "Step 1: We seek safe, stable yields (est. 9-11%) from secured private credit. This acts as the engine room."; break;
             case 2: message = "Step 2: That 9-11% yield isn't just pocketed. It buys 10-year Call Options for cheap leverage."; break;
-            case 3: message = "Step 3: The Synergy. If stocks stay flat, the credit yield covers the option cost. If stocks boom, the options multiply the gain."; break;
+            case 3: message = "Step 3: The Synergy. If stocks stay flat, the credit yield covers the premium. If stocks boom, the options multiply the gain."; break;
         }
         detailText.textContent = message;
         detailBox.classList.remove('hidden');
