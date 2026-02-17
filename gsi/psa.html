@@ -11,7 +11,7 @@
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portfolio Strategy Analyzer Prototype</title>
+    <title>Portfolio Strategy Analyzer</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
@@ -23,6 +23,7 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #334155; margin: 0; padding: 20px; }
         .container { max-width: 1400px; margin: auto; background: var(--card); padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
         
+        /* Navigation */
         .nav-bar { 
             display: flex; 
             justify-content: space-between; 
@@ -35,43 +36,66 @@
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             border-radius: 8px;
         }
-        
         .logo-text { font-size: 1.5rem; font-weight: 700; color: #1e3a8a; letter-spacing: -0.02em; text-decoration: none; }
         .logo-dot { color: #d97706; }
-
         .nav-links { display: flex; gap: 30px; }
         .nav-link { text-decoration: none; color: #4b5563; font-weight: 500; font-size: 0.95rem; transition: color 0.2s; }
         .nav-link:hover { color: #1e40af; }
         .nav-link.active { color: #1e40af; font-weight: 600; }
 
+        /* Header & Toggle */
         .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--border); padding-bottom: 20px; margin-bottom: 25px; }
         h1 { margin: 0; font-size: 1.8rem; color: var(--primary); letter-spacing: -0.5px; }
         .sub { font-size: 0.95rem; color: #64748b; margin-top: 5px; font-weight: 500; }
         
-        .net-badge { background: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; display: inline-block; margin-right: 10px; }
-        .gross-badge { background: #f1f5f9; color: #64748b; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; display: inline-block; margin-right: 10px; }
+        .toggle-container { display: flex; align-items: center; gap: 10px; background: #f1f5f9; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border); }
+        .toggle-label { font-weight: 700; font-size: 0.8rem; color: #64748b; }
+        .toggle-label.active { color: #15803d; } /* Green for Net */
+        
+        /* Toggle Switch CSS */
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #10b981; }
+        input:checked + .slider:before { transform: translateX(18px); }
 
+        /* KPI Grid */
         .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 30px; }
-        .kpi { background: #f1f5f9; padding: 15px; border-radius: 12px; border: 1px solid var(--border); text-align: center; display: flex; flex-direction: column; justify-content: center; }
+        .kpi { background: #f1f5f9; padding: 15px; border-radius: 12px; border: 1px solid var(--border); text-align: center; display: flex; flex-direction: column; justify-content: center; position: relative; }
         .kpi.highlight { background: var(--primary); color: white; border: none; }
         .kpi.highlight .kpi-lbl { color: #94a3b8; }
+        .kpi.highlight .info-icon { color: #cbd5e1; border-color: #cbd5e1; }
         .kpi-val { font-size: 1.3rem; font-weight: 800; margin: 5px 0; }
         .kpi-subval { font-size: 0.85rem; font-weight: 600; opacity: 0.9; }
-        .kpi-lbl { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: #64748b; }
-        
+        .kpi-lbl { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 5px; }
+
+        /* Info Icons & Tooltips */
+        .info-icon {
+            display: inline-flex; justify-content: center; align-items: center;
+            width: 14px; height: 14px; border-radius: 50%; border: 1px solid #94a3b8;
+            color: #94a3b8; font-size: 10px; cursor: help; font-style: normal;
+        }
+        .kpi:hover .tooltip { visibility: visible; opacity: 1; }
+        .tooltip {
+            visibility: hidden; width: 200px; background-color: #334155; color: #fff; text-align: center;
+            border-radius: 6px; padding: 8px; position: absolute; z-index: 100;
+            bottom: 110%; left: 50%; margin-left: -100px; opacity: 0; transition: opacity 0.3s;
+            font-size: 0.75rem; font-weight: 400; text-transform: none; line-height: 1.4;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); pointer-events: none;
+        }
+        .tooltip::after {
+            content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px;
+            border-width: 5px; border-style: solid; border-color: #334155 transparent transparent transparent;
+        }
+
+        /* Dashboard Layout */
         .dashboard { display: grid; grid-template-columns: 300px 1fr; gap: 30px; }
         .controls { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 20px; height: fit-content; }
         
         .fee-section { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-top: 20px; margin-bottom: 20px; }
         .fee-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .fee-title { font-weight: 700; font-size: 0.9rem; color: #334155; }
-        
-        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 22px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--accent); }
-        input:checked + .slider:before { transform: translateX(18px); }
 
         .inp-grp { margin-bottom: 20px; }
         .inp-header { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; }
@@ -82,7 +106,7 @@
         input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; margin-top: -6px; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #e2e8f0; border-radius: 2px; }
-        input[type=number], input[type=date] { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; font-weight: 600; box-sizing: border-box; }
+        input[type=number] { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; font-weight: 600; box-sizing: border-box; }
 
         .chart-container { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; position: relative; height: 600px; }
         .chart-tools { position: absolute; top: 15px; right: 15px; z-index: 10; }
@@ -94,7 +118,12 @@
         td { padding: 12px; text-align: right; border-bottom: 1px solid var(--border); font-family: 'SF Mono', monospace; }
         td:first-child { text-align: left; font-family: inherit; font-weight: 600; color: var(--primary); }
 
-        /* --- ADDED: Modal CSS Only --- */
+        /* Disclaimers */
+        .disclaimer-section { margin-top: 50px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 0.75rem; line-height: 1.5; }
+        .disclaimer-section h4 { font-size: 0.85rem; margin-bottom: 10px; color: #475569; }
+        .disclaimer-section p { margin-bottom: 10px; }
+
+        /* Modal */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fefefe; margin: 5% auto; padding: 25px; border: 1px solid #888; width: 85%; max-width: 1000px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
@@ -122,34 +151,45 @@
             <h1>Portfolio Strategy Analyzer <span style="font-size:0.5em; background:#f1f5f9; padding:4px 8px; border-radius:4px; vertical-align:middle;">Prototype</span></h1>
             <div class="sub">Total Return ETF vs Hedge Fund Structure</div>
         </div>
-        <div style="text-align:right">
-            <span id="displayBadge" class="gross-badge">Displaying: GROSS</span>
+        <div class="toggle-container">
+            <span class="toggle-label" id="lblGross">GROSS</span>
+            <label class="switch">
+                <input type="checkbox" id="headerFeeSwitch" onchange="toggleFees()">
+                <span class="slider round"></span>
+            </label>
+            <span class="toggle-label" id="lblNet">NET (Fees Applied)</span>
         </div>
     </div>
 
     <div class="kpi-grid">
         <div class="kpi">
-            <div class="kpi-lbl">Your Capital</div>
+            <div class="kpi-lbl">Your Capital <span class="info-icon" title="">ⓘ</span></div>
+            <span class="tooltip">The total USD amount of cash investment simulated in this scenario.</span>
             <div class="kpi-val" id="kpiCap">$0</div>
         </div>
         <div class="kpi" style="background:#f0fdf4; border-color:#bbf7d0;">
-            <div class="kpi-lbl" style="color:#166534;">Total Notional Exposure</div>
+            <div class="kpi-lbl" style="color:#166534;">Total Exposure <span class="info-icon" title="">ⓘ</span></div>
+            <span class="tooltip">Total Notional Exposure. This includes the face value of the credit instruments plus the full notional value of the options controlled.</span>
             <div class="kpi-val" style="color:#15803d;" id="kpiNotional">$0</div>
         </div>
         <div class="kpi">
-            <div class="kpi-lbl">Current NAV</div>
+            <div class="kpi-lbl">Current NAV <span class="info-icon" title="">ⓘ</span></div>
+            <span class="tooltip">Net Asset Value. The current liquidation value of the Credit portfolio plus the market value of the Options.</span>
             <div class="kpi-val" id="kpiNav">$0</div>
         </div>
         <div class="kpi highlight">
-            <div class="kpi-lbl">Projected Value (10Y)</div>
+            <div class="kpi-lbl">Projected Value (10Y) <span class="info-icon" title="">ⓘ</span></div>
+            <span class="tooltip">The simulated ending balance of the GSI strategy after 10 years based on the inputs provided.</span>
             <div class="kpi-val" id="kpiProj">$0</div>
         </div>
         <div class="kpi" style="background:#f8fafc; border-color:#94a3b8;">
-            <div class="kpi-lbl">SPX ETF Return (10Y)</div>
+            <div class="kpi-lbl">SPX ETF Return (10Y) <span class="info-icon" title="">ⓘ</span></div>
+            <span class="tooltip">The simulated ending balance of a standard S&P 500 ETF (buy and hold) over the same period.</span>
             <div class="kpi-val" id="kpiSpxRet">$0</div>
         </div>
         <div class="kpi" id="kpiAlphaBox" style="background:#f0f9ff; border-color:#bae6fd;">
-            <div class="kpi-lbl">Alpha (vs SPX ETF)</div>
+            <div class="kpi-lbl">Alpha (vs SPX ETF) <span class="info-icon" title="">ⓘ</span></div>
+            <span class="tooltip">The excess return (value added) of the GSI strategy compared to the S&P 500 ETF.</span>
             <div class="kpi-val" id="kpiAlpha">$0</div>
             <div class="kpi-subval" id="kpiAlphaPct">0.0%</div>
         </div>
@@ -167,30 +207,24 @@
                 <input type="number" id="inpInv" value="250000" step="10000" onchange="updateDashboard()">
             </div>
 
-            <div class="fee-section">
+            <div class="fee-section" id="feeControls" style="opacity:0.5; pointer-events:none; transition: opacity 0.3s;">
                 <div class="fee-header">
-                    <span class="fee-title">FEES & NET RETURNS</span>
-                    <label class="switch">
-                        <input type="checkbox" id="checkFees" onchange="toggleFees()">
-                        <span class="slider round"></span>
-                    </label>
+                    <span class="fee-title">FEE STRUCTURE</span>
                 </div>
-                <div id="feeControls" style="opacity:0.5; pointer-events:none; transition: opacity 0.3s;">
-                    <div class="inp-grp">
-                        <label>Carry Fee (On Withdrawal)</label>
-                        <select id="selCarry" onchange="updateDashboard()">
-                            <option value="0">0%</option>
-                            <option value="10">10%</option>
-                            <option value="20" selected>20%</option>
-                        </select>
+                <div class="inp-grp">
+                    <label>Carry Fee (On Withdrawal)</label>
+                    <select id="selCarry" onchange="updateDashboard()">
+                        <option value="0">0%</option>
+                        <option value="10">10%</option>
+                        <option value="20" selected>20%</option>
+                    </select>
+                </div>
+                <div class="inp-grp" style="margin-bottom:0;">
+                    <div class="inp-header">
+                        <label>Management Fee (Annual)</label>
+                        <span class="inp-val" id="valMgmt">0.5%</span>
                     </div>
-                    <div class="inp-grp" style="margin-bottom:0;">
-                        <div class="inp-header">
-                            <label>Management Fee (Annual)</label>
-                            <span class="inp-val" id="valMgmt">0.5%</span>
-                        </div>
-                        <input type="range" id="inpMgmt" min="0" max="2" step="0.5" value="0.5" oninput="updateVal('valMgmt', this.value); updateDashboard()">
-                    </div>
+                    <input type="range" id="inpMgmt" min="0" max="2" step="0.5" value="0.5" oninput="updateVal('valMgmt', this.value); updateDashboard()">
                 </div>
             </div>
 
@@ -263,6 +297,19 @@
             </table>
         </div>
     </div>
+
+    <footer class="disclaimer-section">
+        <h4>Important Disclosures & Risk Factors</h4>
+        <p><strong>General Disclaimer:</strong> The information presented herein is for informational and illustrative purposes only. This tool generates hypothetical projections based on user-defined inputs and does not represent actual trading results. Backtested/simulated performance returns are hypothetical and do not reflect trading in actual accounts.</p>
+        
+        <p><strong>Past Performance:</strong> Past performance is not necessarily indicative of future results. No assurance of any kind is being provided that targeted or projected returns will be achieved. Actual performance is likely to differ materially from targeted or projected returns due to various risks and uncertainties.</p>
+        
+        <p><strong>Risk Warning:</strong> THE FUND IS SPECULATIVE AND INVOLVES A HIGH DEGREE OF RISK. Investors could lose all or a substantial amount of their investment. The Fund may lack diversification, thereby increasing the risk of loss. The Fund’s performance may be volatile. Option trading does not guarantee high returns. Strategies and targets depend upon a variety of factors, including prevailing market conditions and investment availability.</p>
+        
+        <p><strong>Hypothetical Results:</strong> Charts and projections are based on historical data and certain assumptions that may not prove accurate in the future. Hypothetical trading does not involve financial risk, and no hypothetical trading record can completely account for the impact of financial risk in actual trading.</p>
+        
+        <p><strong>Private Offering:</strong> Interests in the Fund are offered under a separate private offering memorandum and have not been registered under the Securities Act of 1933 or any state securities laws. This tool does not constitute an offer to sell, or a solicitation of an offer to buy.</p>
+    </footer>
 </div>
 
 <div id="histModal" class="modal">
@@ -316,7 +363,7 @@
         // 1. Gather Inputs
         const inv = parseFloat(document.getElementById('inpInv').value);
         const spot = parseFloat(document.getElementById('inpSpot').value);
-        const useFees = document.getElementById('checkFees').checked;
+        const useFees = document.getElementById('headerFeeSwitch').checked;
         
         const inputs = {
             investment: inv,
@@ -386,7 +433,7 @@
         const html = 
             row('GSI Strategy', gsiFinal) +
             row('S&P 500 ETF', spxFinal) +
-            row('Private Equity (Proxy)', peFinal) +
+            row('Private Equity', peFinal) +
             row('US Agg Bonds', bondFinal);
             
         document.getElementById('tableBody').innerHTML = html;
@@ -441,20 +488,21 @@
     }
 
     function toggleFees() {
-        const checked = document.getElementById('checkFees').checked;
+        const checked = document.getElementById('headerFeeSwitch').checked;
         const panel = document.getElementById('feeControls');
-        const badge = document.getElementById('displayBadge');
+        const lblGross = document.getElementById('lblGross');
+        const lblNet = document.getElementById('lblNet');
         
         if (checked) {
             panel.style.opacity = '1';
             panel.style.pointerEvents = 'auto';
-            badge.innerText = 'Displaying: NET';
-            badge.className = 'net-badge';
+            lblNet.classList.add('active');
+            lblGross.classList.remove('active');
         } else {
             panel.style.opacity = '0.5';
             panel.style.pointerEvents = 'none';
-            badge.innerText = 'Displaying: GROSS';
-            badge.className = 'gross-badge';
+            lblGross.classList.add('active');
+            lblNet.classList.remove('active');
         }
         updateDashboard();
     }
