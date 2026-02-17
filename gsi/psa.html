@@ -50,7 +50,7 @@
         
         .toggle-container { display: flex; align-items: center; gap: 10px; background: #f1f5f9; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border); }
         .toggle-label { font-weight: 700; font-size: 0.8rem; color: #64748b; }
-        .toggle-label.active { color: #15803d; } /* Green for Net */
+        .toggle-label.active { color: #15803d; } 
         
         /* Toggle Switch CSS */
         .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
@@ -154,7 +154,7 @@
         <div class="toggle-container">
             <span class="toggle-label" id="lblGross">GROSS</span>
             <label class="switch">
-                <input type="checkbox" id="headerFeeSwitch" onchange="toggleFees()">
+                <input type="checkbox" id="headerFeeSwitch" onchange="toggleFees('header')">
                 <span class="slider round"></span>
             </label>
             <span class="toggle-label" id="lblNet">NET (Fees Applied)</span>
@@ -207,24 +207,30 @@
                 <input type="number" id="inpInv" value="250000" step="10000" onchange="updateDashboard()">
             </div>
 
-            <div class="fee-section" id="feeControls" style="opacity:0.5; pointer-events:none; transition: opacity 0.3s;">
+            <div class="fee-section">
                 <div class="fee-header">
                     <span class="fee-title">FEE STRUCTURE</span>
+                    <label class="switch">
+                        <input type="checkbox" id="sidebarFeeSwitch" onchange="toggleFees('sidebar')">
+                        <span class="slider round"></span>
+                    </label>
                 </div>
-                <div class="inp-grp">
-                    <label>Carry Fee (On Withdrawal)</label>
-                    <select id="selCarry" onchange="updateDashboard()">
-                        <option value="0">0%</option>
-                        <option value="10">10%</option>
-                        <option value="20" selected>20%</option>
-                    </select>
-                </div>
-                <div class="inp-grp" style="margin-bottom:0;">
-                    <div class="inp-header">
-                        <label>Management Fee (Annual)</label>
-                        <span class="inp-val" id="valMgmt">0.5%</span>
+                <div id="feeControls" style="opacity:0.5; pointer-events:none; transition: opacity 0.3s;">
+                    <div class="inp-grp">
+                        <label>Carry Fee (On Withdrawal)</label>
+                        <select id="selCarry" onchange="updateDashboard()">
+                            <option value="0">0%</option>
+                            <option value="10">10%</option>
+                            <option value="20" selected>20%</option>
+                        </select>
                     </div>
-                    <input type="range" id="inpMgmt" min="0" max="2" step="0.5" value="0.5" oninput="updateVal('valMgmt', this.value); updateDashboard()">
+                    <div class="inp-grp" style="margin-bottom:0;">
+                        <div class="inp-header">
+                            <label>Management Fee (Annual)</label>
+                            <span class="inp-val" id="valMgmt">0.5%</span>
+                        </div>
+                        <input type="range" id="inpMgmt" min="0" max="2" step="0.5" value="0.5" oninput="updateVal('valMgmt', this.value); updateDashboard()">
+                    </div>
                 </div>
             </div>
 
@@ -487,13 +493,29 @@
         };
     }
 
-    function toggleFees() {
-        const checked = document.getElementById('headerFeeSwitch').checked;
+    function toggleFees(source) {
+        const headerSwitch = document.getElementById('headerFeeSwitch');
+        const sidebarSwitch = document.getElementById('sidebarFeeSwitch');
+        
+        // Sync state based on who triggered it
+        let isChecked = false;
+        if (source === 'header') {
+            isChecked = headerSwitch.checked;
+            sidebarSwitch.checked = isChecked;
+        } else if (source === 'sidebar') {
+            isChecked = sidebarSwitch.checked;
+            headerSwitch.checked = isChecked;
+        } else {
+            // Initial load or unknown source
+            isChecked = headerSwitch.checked; 
+        }
+
+        // Apply Logic
         const panel = document.getElementById('feeControls');
         const lblGross = document.getElementById('lblGross');
         const lblNet = document.getElementById('lblNet');
         
-        if (checked) {
+        if (isChecked) {
             panel.style.opacity = '1';
             panel.style.pointerEvents = 'auto';
             lblNet.classList.add('active');
