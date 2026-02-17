@@ -216,17 +216,39 @@
             border: 1px solid #e2e8f0;
         }
 
-        /* Disclaimer Footer */
+        /* Disclaimer Footer - Enhanced */
         .disclaimer-section {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #94a3b8;
-            margin-top: 40px;
-            padding-top: 20px;
+            margin-top: 50px;
+            padding-top: 30px;
             border-top: 1px solid var(--border);
-            line-height: 1.6;
+            line-height: 1.5;
+            text-align: justify;
         }
-        .disclaimer-section h4 { margin: 0 0 5px 0; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.05em; }
-        .disclaimer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .disclaimer-section h4 { 
+            margin: 0 0 8px 0; 
+            color: #64748b; 
+            text-transform: uppercase; 
+            letter-spacing: 0.05em; 
+            font-size: 0.75rem;
+        }
+        .disclaimer-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 40px; 
+            margin-bottom: 30px;
+        }
+        .legal-block {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        .legal-block p { margin-bottom: 10px; }
+        .legal-block p:last-child { margin-bottom: 0; }
+        
         @media (max-width: 768px) { .disclaimer-grid { grid-template-columns: 1fr; } }
 
     </style>
@@ -341,21 +363,37 @@
     <div class="disclaimer-section">
         <div class="disclaimer-grid">
             <div>
-                <h4>Data Accuracy Disclaimer</h4>
+                <h4>Methodology Note</h4>
                 <p>
-                    This tool is a theoretical prototype. Historical performance data is simulated based on retrospective application of the GSI strategy mechanics (Credit Yield + Levered Options) against historical market conditions. 
-                    <strong>The data may not be fully accurate</strong> and should be used for educational and demonstrative purposes only. Past performance is not indicative of future results.
+                    This tool is a theoretical prototype used for demonstrative purposes. Historical performance data is simulated based on retrospective application of the GSI strategy mechanics (Credit Yield + Levered Options) against historical market conditions. 
+                    <strong>Backtested/simulated performance returns are hypothetical and do not reflect trading in actual accounts</strong>.
                 </p>
             </div>
             <div>
                 <h4>Data Sources & Assumptions</h4>
                 <ul style="margin:0; padding-left:15px;">
                     <li><strong>S&P 500:</strong> NYU Stern / Yahoo Finance (Total Return Data).</li>
-                    <li><strong>Private Equity (Net):</strong> Cambridge Associates Proxy. Modeled here as Gross Return less <strong>1.5% Mgmt Fee & 20% Carry</strong> (High Water Mark).</li>
+                    <li><strong>Private Equity (Net):</strong> Cambridge Associates. Modeled here as Gross Return less <strong>1.5% Mgmt Fee & 20% Carry</strong> (High Water Mark).</li>
                     <li><strong>Credit Base:</strong> Fed Funds Rate + 600bps Spread (Simulated).</li>
-                    <li><strong>Bonds:</strong> Bloomberg US Aggregate Bond Index (Proxy).</li>
+                    <li><strong>Bonds:</strong> Bloomberg US Aggregate Bond Index.</li>
                 </ul>
             </div>
+        </div>
+
+        <div class="legal-block">
+            <h4>Important Legal Disclosures & Risk Factors</h4>
+            <p>
+                <strong>Hypothetical Performance Limitations:</strong> Backtested performance results have inherent limitations. They are generally prepared with the benefit of hindsight. No hypothetical trading can completely account for the impact of financial risk in actual trading, such as the ability to withstand losses or adhere to a particular trading program in spite of trading losses. Past performance is not indicative of future results.
+            </p>
+            <p>
+                <strong>Investment Risk:</strong> The Fund is speculative and involves a high degree of risk. An investor could lose all or a substantial amount of their investment. The strategy depends on various factors including market conditions, interest rates, and counterparty reliability. There is no guarantee that targeted returns will be achieved.
+            </p>
+            <p>
+                <strong>Regulatory Status:</strong> The Investment Manager is not registered as an investment adviser with the SEC. The Interests in the Fund have not been registered under the Securities Act of 1933 and are sold for investment only pursuant to an exemption from registration.
+            </p>
+            <p>
+                <strong>General:</strong> This tool and the information herein are Proprietary and Confidential. This does not constitute an offer to sell or a solicitation of an offer to buy. Prospective investors should rely only on the Offering Memorandum and their own tax, legal, and accounting advisors.
+            </p>
         </div>
     </div>
 </div>
