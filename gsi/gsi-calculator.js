@@ -1,6 +1,6 @@
 /**
  * GSI Strategy Calculator (Shared Logic)
- * Used by: index.html (Simple Simulator) and psa.html (Advanced Analyzer)
+ * Used by: index.html (Simple Simulator), historical.html (Backtester), and psa.html (Advanced Analyzer)
  */
 
 // --- Constants & Demo Data Structure ---
@@ -36,18 +36,17 @@ function bsPrice(S, K, T, r, v) {
 
 // --- Main Calculation Function ---
 function calculateGSIProjection(inputs) {
-    const {
-        investment,         
-        currentSpot,        
-        spxPriceReturn,     
-        spxDivYield,        
-        creditYield,        
-        volatility,         
-        mgmtFee,            
-        carryFee,           
-        riskFreeRate,       
-        years               
-    } = inputs;
+    // Extract inputs with fallbacks for legacy 'spx' naming conventions
+    const investment = inputs.investment;         
+    const currentSpot = inputs.currentSpot;        
+    const indexPriceReturn = inputs.indexPriceReturn !== undefined ? inputs.indexPriceReturn : inputs.spxPriceReturn;     
+    const indexDivYield = inputs.indexDivYield !== undefined ? inputs.indexDivYield : inputs.spxDivYield;        
+    const creditYield = inputs.creditYield;        
+    const volatility = inputs.volatility;         
+    const mgmtFee = inputs.mgmtFee;            
+    const carryFee = inputs.carryFee;           
+    const riskFreeRate = inputs.riskFreeRate;       
+    const years = inputs.years;               
 
     // 1. Setup Scaling Ratio
     const ratio = investment / MASTER_COST_BASIS;
@@ -72,22 +71,23 @@ function calculateGSIProjection(inputs) {
     const initialNotional = uValCredit + (uQuantityOpt * currentSpot);
 
     // 3. Prepare Loop Variables
-    const gPrice = spxPriceReturn / 100;
-    const gTotal = (spxPriceReturn + spxDivYield) / 100; 
+    const gPrice = indexPriceReturn / 100;
+    const gTotal = (indexPriceReturn + indexDivYield) / 100; 
     const gCredit = creditYield / 100;
     const vol = volatility / 100;
     const r = riskFreeRate / 100;
     const mFee = mgmtFee / 100;
     const cFee = carryFee / 100;
 
-    // Data Series Output
+    // Data Series Output (Updated to use generic 'index' while keeping 'spx' for backward compatibility)
     const results = {
         labels: [],
         gsi: [initialNAV],
         credit: [uValCredit],
         options: [uValOpt],
         static: [], 
-        spx: [investment],
+        index: [investment], // Generic naming
+        spx: [investment],   // Legacy alias
         pe: [investment],
         bonds: [investment]
     };
@@ -117,31 +117,18 @@ function calculateGSIProjection(inputs) {
         let valCreditGross = uValCredit * Math.pow(1 + gCredit, t);
         
         // Option Re-pricing
-        // At the final step, force T_rem to 0 to ensure convergence
         let T_rem = Math.max(0, years - t);
-        
-        // Calculate Raw Option Value (Gross)
-        // If it's the last step, bsPrice automatically handles T=0 as Intrinsic
         const optPrice = bsPrice(S_fut, weightedStrike, T_rem, r, vol);
         let valOptGross = optPrice * uQuantityOpt;
         
         // Calculate Intrinsic Value (Static) for comparison
-        // This is purely Max(0, S-K). 
         const valIntrinsic = Math.max(0, S_fut - weightedStrike) * uQuantityOpt;
 
         // Apply Fees to Components
-        // Note: For visualization of "Convergence", if we want Option Value to meet Intrinsic
-        // we generally compare Gross to Gross. But the chart shows the Portfolio Value (Net).
-        // To make the "Option Component" line meet the "Intrinsic" line on the chart,
-        // we apply the same fee drag to the Intrinsic line purely for visualization purposes
-        // in the PSA chart.
-        
         const mgmtDrag = Math.pow(1 - mFee, t);
         
         let finalCredit = valCreditGross * mgmtDrag;
         let finalOpt = valOptGross * mgmtDrag;
-        
-        // Apply Drag to Intrinsic for visual convergence in Net Chart
         let finalIntrinsic = valIntrinsic * mgmtDrag;
 
         let finalPort = finalCredit + finalOpt;
@@ -165,18 +152,19 @@ function calculateGSIProjection(inputs) {
         results.gsi.push(finalPort);
         results.credit.push(finalCredit);
         results.options.push(finalOpt);
-        results.static.push(finalIntrinsic); // Now carries same fee load for visual match
+        results.static.push(finalIntrinsic); 
 
         // --- B. Benchmark Calculations ---
-        const spxNetGrowth = gTotal - 0.0003; 
-        const valSPX = investment * Math.pow(1 + spxNetGrowth, t);
-        results.spx.push(valSPX);
+        const indexNetGrowth = gTotal - 0.0003; 
+        const valIndex = investment * Math.pow(1 + indexNetGrowth, t);
+        results.index.push(valIndex);
+        results.spx.push(valIndex); // Legacy alias
 
         // PE (Proxy)
         const peBeta = 1.2;
         const peMgmt = 0.015;
         const peCarry = 0.20;
-        const peGrossRate = (spxNetGrowth * peBeta); 
+        const peGrossRate = (indexNetGrowth * peBeta); 
         const peNetRatePreCarry = peGrossRate - peMgmt;
         let valPE = investment * Math.pow(1 + peNetRatePreCarry, t);
         const peProfit = valPE - investment;
@@ -196,10 +184,10 @@ function calculateGSIProjection(inputs) {
     const totalReturn = finalVal / investment;
     const irr = (Math.pow(totalReturn, 1/years) - 1) * 100;
     
-    // SPX Metrics
-    const finalSPX = results.spx[results.spx.length - 1];
-    const spxTotalReturn = finalSPX / investment;
-    const spxIrr = (Math.pow(spxTotalReturn, 1/years) - 1) * 100;
+    // Index Metrics
+    const finalIndex = results.index[results.index.length - 1];
+    const indexTotalReturn = finalIndex / investment;
+    const indexIrr = (Math.pow(indexTotalReturn, 1/years) - 1) * 100;
 
     return {
         series: results,
@@ -208,9 +196,13 @@ function calculateGSIProjection(inputs) {
             finalValue: finalVal,
             moic: totalReturn,
             irr: irr,
-            spxFinal: finalSPX,
-            spxMoic: spxTotalReturn,
-            spxIrr: spxIrr
+            indexFinal: finalIndex,
+            indexMoic: indexTotalReturn,
+            indexIrr: indexIrr,
+            // Legacy aliases mapping to the new generic index variables
+            spxFinal: finalIndex, 
+            spxMoic: indexTotalReturn,
+            spxIrr: indexIrr
         }
     };
 }
