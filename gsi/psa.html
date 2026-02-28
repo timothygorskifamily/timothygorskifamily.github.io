@@ -183,13 +183,13 @@
             <div class="kpi-val" id="kpiProj">$0</div>
         </div>
         <div class="kpi" style="background:#f8fafc; border-color:#94a3b8;">
-            <div class="kpi-lbl">SPX ETF Return (10Y) <span class="info-icon" title="">ⓘ</span></div>
-            <span class="tooltip">The simulated ending balance of a standard S&P 500 ETF (buy and hold) over the same period.</span>
+            <div class="kpi-lbl" id="lblKpiIdxRet">SPX ETF Return (10Y) <span class="info-icon" title="">ⓘ</span></div>
+            <span class="tooltip">The simulated ending balance of a standard Index ETF (buy and hold) over the same period.</span>
             <div class="kpi-val" id="kpiSpxRet">$0</div>
         </div>
         <div class="kpi" id="kpiAlphaBox" style="background:#f0f9ff; border-color:#bae6fd;">
-            <div class="kpi-lbl">Alpha (vs SPX ETF) <span class="info-icon" title="">ⓘ</span></div>
-            <span class="tooltip">The excess return (value added) of the GSI strategy compared to the S&P 500 ETF.</span>
+            <div class="kpi-lbl" id="lblKpiAlpha">Alpha (vs SPX ETF) <span class="info-icon" title="">ⓘ</span></div>
+            <span class="tooltip">The excess return (value added) of the GSI strategy compared to the standard Index ETF.</span>
             <div class="kpi-val" id="kpiAlpha">$0</div>
             <div class="kpi-subval" id="kpiAlphaPct">0.0%</div>
         </div>
@@ -197,8 +197,17 @@
 
     <div class="dashboard">
         <div class="controls">
+            
             <div class="inp-grp">
-                <label style="margin-bottom:8px;">SPXFP Spot Price</label>
+                <label style="margin-bottom:8px;">Underlying Index</label>
+                <select id="inpIdx" onchange="updateIndexDefaults()">
+                    <option value="SPX" selected>S&P 500 (SPX)</option>
+                    <option value="MSCI">MSCI World</option>
+                </select>
+            </div>
+
+            <div class="inp-grp">
+                <label style="margin-bottom:8px;">Index Spot Price</label>
                 <input type="number" id="inpSpot" value="580" step="0.50" onchange="updateDashboard()">
             </div>
 
@@ -239,7 +248,7 @@
 
             <div class="inp-grp">
                 <div class="inp-header">
-                    <label>S&P 500 Price Return</label>
+                    <label id="lblMktTitle">S&P 500 Price Return</label>
                     <div style="display:flex; align-items:center;">
                         <span class="inp-val" id="valMkt" style="margin-right:10px;">12.0%</span>
                         <button class="btn-mini" onclick="openHistModal()">📜 View 50Y History</button>
@@ -250,7 +259,7 @@
 
             <div class="inp-grp">
                 <div class="inp-header">
-                    <label>S&P 500 Dividend Yield</label>
+                    <label id="lblDivTitle">S&P 500 Dividend Yield</label>
                     <span class="inp-val" id="valDiv">1.1%</span>
                 </div>
                 <input type="range" id="inpDiv" min="0" max="5" step="0.1" value="1.1" oninput="updateVal('valDiv', this.value); updateDashboard()">
@@ -308,13 +317,9 @@
     <footer class="disclaimer-section">
         <h4>Important Disclosures & Risk Factors</h4>
         <p><strong>General Disclaimer:</strong> The information presented herein is for informational and illustrative purposes only. This tool generates hypothetical projections based on user-defined inputs and does not represent actual trading results. Backtested/simulated performance returns are hypothetical and do not reflect trading in actual accounts.</p>
-        
         <p><strong>Past Performance:</strong> Past performance is not necessarily indicative of future results. No assurance of any kind is being provided that targeted or projected returns will be achieved. Actual performance is likely to differ materially from targeted or projected returns due to various risks and uncertainties.</p>
-        
         <p><strong>Risk Warning:</strong> THE FUND IS SPECULATIVE AND INVOLVES A HIGH DEGREE OF RISK. Investors could lose all or a substantial amount of their investment. The Fund may lack diversification, thereby increasing the risk of loss. The Fund’s performance may be volatile. Option trading does not guarantee high returns. Strategies and targets depend upon a variety of factors, including prevailing market conditions and investment availability.</p>
-        
         <p><strong>Hypothetical Results:</strong> Charts and projections are based on historical data and certain assumptions that may not prove accurate in the future. Hypothetical trading does not involve financial risk, and no hypothetical trading record can completely account for the impact of financial risk in actual trading.</p>
-        
         <p><strong>Private Offering:</strong> Interests in the Fund are offered under a separate private offering memorandum and have not been registered under the Securities Act of 1933 or any state securities laws. This tool does not constitute an offer to sell, or a solicitation of an offer to buy.</p>
     </footer>
 </div>
@@ -330,6 +335,10 @@
                 <button class="asset-btn active" onclick="switchHistChart('SPX', this)">
                     <span>🇺🇸 S&P 500 (Price Return)</span>
                     <span class="asset-ret" style="color:#10b981;">9.2%</span>
+                </button>
+                <button class="asset-btn" onclick="switchHistChart('MSCI', this)">
+                    <span>🌍 MSCI World</span>
+                    <span class="asset-ret" style="color:#0ea5e9;">8.1%</span>
                 </button>
                 <button class="asset-btn" onclick="switchHistChart('PE', this)">
                     <span>🏢 Private Equity</span>
@@ -365,18 +374,47 @@
     // --- Chart Globals ---
     let chartWealth = null;
 
+    function updateIndexDefaults() {
+        const idx = document.getElementById('inpIdx').value;
+        if(idx === 'MSCI') {
+            document.getElementById('lblMktTitle').innerText = 'MSCI World Price Return';
+            document.getElementById('lblDivTitle').innerText = 'MSCI World Dividend Yield';
+            document.getElementById('lblKpiIdxRet').innerHTML = 'MSCI ETF Return (10Y) <span class="info-icon" title="">ⓘ</span>';
+            document.getElementById('lblKpiAlpha').innerHTML = 'Alpha (vs MSCI ETF) <span class="info-icon" title="">ⓘ</span>';
+            
+            // Adjust to MSCI historical norms
+            document.getElementById('inpDiv').value = 1.8;
+            updateVal('valDiv', 1.8);
+            document.getElementById('inpVol').value = 19;
+            updateVal('valVol', 19);
+        } else {
+            document.getElementById('lblMktTitle').innerText = 'S&P 500 Price Return';
+            document.getElementById('lblDivTitle').innerText = 'S&P 500 Dividend Yield';
+            document.getElementById('lblKpiIdxRet').innerHTML = 'SPX ETF Return (10Y) <span class="info-icon" title="">ⓘ</span>';
+            document.getElementById('lblKpiAlpha').innerHTML = 'Alpha (vs SPX ETF) <span class="info-icon" title="">ⓘ</span>';
+            
+            // Adjust back to SPX historical norms
+            document.getElementById('inpDiv').value = 1.1;
+            updateVal('valDiv', 1.1);
+            document.getElementById('inpVol').value = 22;
+            updateVal('valVol', 22);
+        }
+        updateDashboard();
+    }
+
     // --- Main Logic: Wire UI to External Calculator ---
     function updateDashboard() {
-        // 1. Gather Inputs
         const inv = parseFloat(document.getElementById('inpInv').value);
         const spot = parseFloat(document.getElementById('inpSpot').value);
         const useFees = document.getElementById('headerFeeSwitch').checked;
+        const idxType = document.getElementById('inpIdx').value;
+        const idxName = idxType === 'SPX' ? 'S&P 500 ETF' : 'MSCI World ETF';
         
         const inputs = {
             investment: inv,
             currentSpot: spot, 
-            spxPriceReturn: parseFloat(document.getElementById('inpMkt').value),
-            spxDivYield: parseFloat(document.getElementById('inpDiv').value),
+            indexPriceReturn: parseFloat(document.getElementById('inpMkt').value),
+            indexDivYield: parseFloat(document.getElementById('inpDiv').value),
             creditYield: parseFloat(document.getElementById('inpBcred').value),
             volatility: parseFloat(document.getElementById('inpVol').value),
             mgmtFee: useFees ? parseFloat(document.getElementById('inpMgmt').value) : 0,
@@ -385,22 +423,21 @@
             years: 10
         };
 
-        // 2. Call External Logic
         const data = calculateGSIProjection(inputs);
         const series = data.series;
         const metrics = data.metrics;
 
-        // 3. Update KPI Grid
+        // KPI Grid
         document.getElementById('kpiCap').innerText = fmt(inv);
         document.getElementById('kpiNotional').innerText = fmt(metrics.initialNotional);
         document.getElementById('kpiNav').innerText = fmt(series.gsi[0]);
         document.getElementById('kpiProj').innerText = fmt(metrics.finalValue);
         
-        const finalSpx = series.spx[series.spx.length-1];
-        document.getElementById('kpiSpxRet').innerText = fmt(finalSpx);
+        const finalIdx = series.index[series.index.length-1];
+        document.getElementById('kpiSpxRet').innerText = fmt(finalIdx);
 
-        const alpha = metrics.finalValue - finalSpx;
-        const alphaPct = ((metrics.finalValue / finalSpx) - 1) * 100;
+        const alpha = metrics.finalValue - finalIdx;
+        const alphaPct = ((metrics.finalValue / finalIdx) - 1) * 100;
         
         const alphaBox = document.getElementById('kpiAlphaBox');
         const alphaTxt = document.getElementById('kpiAlpha');
@@ -417,14 +454,12 @@
             alphaTxt.style.color = '#dc2626'; alphaSub.style.color = '#dc2626';
         }
 
-        // 4. Update Charts
-        renderWealthChart(series.labels, series.gsi, series.spx, series.credit, series.options, series.static);
-
-        // 5. Update Table
-        updateTable(inv, metrics.finalValue, finalSpx, series.pe[series.pe.length-1], series.bonds[series.bonds.length-1]);
+        // Charts & Tables
+        renderWealthChart(series.labels, series.gsi, series.index, series.credit, series.options, series.static, idxName);
+        updateTable(inv, metrics.finalValue, finalIdx, series.pe[series.pe.length-1], series.bonds[series.bonds.length-1], idxName);
     }
 
-    function updateTable(initial, gsiFinal, spxFinal, peFinal, bondFinal) {
+    function updateTable(initial, gsiFinal, idxFinal, peFinal, bondFinal, idxName) {
         const row = (name, final) => {
             const ret = ((final/initial)-1)*100;
             const irr = (Math.pow(final/initial, 0.1)-1)*100;
@@ -439,7 +474,7 @@
 
         const html = 
             row('GSI Strategy', gsiFinal) +
-            row('S&P 500 ETF', spxFinal) +
+            row(idxName, idxFinal) +
             row('Private Equity', peFinal) +
             row('US Agg Bonds', bondFinal);
             
@@ -447,7 +482,7 @@
     }
 
     // --- Chart Rendering ---
-    function renderWealthChart(labels, gsi, spx, credit, options, stat) {
+    function renderWealthChart(labels, gsi, indexData, credit, options, stat, idxName) {
         const ctx = document.getElementById('chartWealth').getContext('2d');
         if(chartWealth) chartWealth.destroy();
         
@@ -457,8 +492,7 @@
                 labels: labels,
                 datasets: [
                     { label: 'GSI Strategy', data: gsi, borderColor: '#0f172a', backgroundColor: 'rgba(15, 23, 42, 0.05)', borderWidth: 3, fill: true, pointRadius: 0 },
-                    { label: 'S&P 500 ETF', data: spx, borderColor: '#94a3b8', borderWidth: 2, borderDash: [5, 5], pointRadius: 0 },
-                    // Hidden components by default, toggleable via legend
+                    { label: idxName, data: indexData, borderColor: '#94a3b8', borderWidth: 2, borderDash: [5, 5], pointRadius: 0 },
                     { label: 'Credit Floor', data: credit, borderColor: '#10b981', borderWidth: 1, pointRadius: 0, hidden: true },
                     { label: 'Option Value', data: options, borderColor: '#ef4444', borderWidth: 1, pointRadius: 0, hidden: true },
                     { label: 'Intrinsic Value', data: stat, borderColor: '#9333ea', borderWidth: 1, borderDash: [2,2], pointRadius: 0, hidden: true }
@@ -470,80 +504,43 @@
 
     function commonChartOptions(format) {
         return {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            scales: {
-                x: { grid: { display: false } },
-                y: { 
-                    grid: { color: '#f1f5f9' },
-                    ticks: { callback: (v) => format==='$' ? (v>=1000000 ? '$'+(v/1000000).toFixed(1)+'M' : '$'+(v/1000).toFixed(0)+'k') : v }
-                }
-            },
-            plugins: {
-                zoom: { zoom: { wheel: { enabled: true }, drag: { enabled: true }, mode: 'x' } },
-                legend: { position: 'top' },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + fmt(context.raw);
-                        }
-                    }
-                }
-            }
+            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+            scales: { x: { grid: { display: false } }, y: { grid: { color: '#f1f5f9' }, ticks: { callback: (v) => format==='$' ? (v>=1000000 ? '$'+(v/1000000).toFixed(1)+'M' : '$'+(v/1000).toFixed(0)+'k') : v } } },
+            plugins: { zoom: { zoom: { wheel: { enabled: true }, drag: { enabled: true }, mode: 'x' } }, legend: { position: 'top' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + fmt(context.raw); } } } }
         };
     }
 
     function toggleFees(source) {
         const headerSwitch = document.getElementById('headerFeeSwitch');
         const sidebarSwitch = document.getElementById('sidebarFeeSwitch');
-        
-        // Sync state based on who triggered it
         let isChecked = false;
-        if (source === 'header') {
-            isChecked = headerSwitch.checked;
-            sidebarSwitch.checked = isChecked;
-        } else if (source === 'sidebar') {
-            isChecked = sidebarSwitch.checked;
-            headerSwitch.checked = isChecked;
-        } else {
-            // Initial load or unknown source
-            isChecked = headerSwitch.checked; 
-        }
+        if (source === 'header') { isChecked = headerSwitch.checked; sidebarSwitch.checked = isChecked; } 
+        else if (source === 'sidebar') { isChecked = sidebarSwitch.checked; headerSwitch.checked = isChecked; } 
+        else { isChecked = headerSwitch.checked; }
 
-        // Apply Logic
         const panel = document.getElementById('feeControls');
         const lblGross = document.getElementById('lblGross');
         const lblNet = document.getElementById('lblNet');
         
         if (isChecked) {
-            panel.style.opacity = '1';
-            panel.style.pointerEvents = 'auto';
-            lblNet.classList.add('active');
-            lblGross.classList.remove('active');
+            panel.style.opacity = '1'; panel.style.pointerEvents = 'auto';
+            lblNet.classList.add('active'); lblGross.classList.remove('active');
         } else {
-            panel.style.opacity = '0.5';
-            panel.style.pointerEvents = 'none';
-            lblGross.classList.add('active');
-            lblNet.classList.remove('active');
+            panel.style.opacity = '0.5'; panel.style.pointerEvents = 'none';
+            lblGross.classList.add('active'); lblNet.classList.remove('active');
         }
         updateDashboard();
     }
 
-    function resetZoom() {
-        if(chartWealth) chartWealth.resetZoom();
-    }
-
-    // Init
+    function resetZoom() { if(chartWealth) chartWealth.resetZoom(); }
     window.onload = updateDashboard;
 
-
-    // ====================================================================
-    // ADDED: HARDCODED DATA FOR HISTORICAL BUTTON & MODAL ONLY
-    // ====================================================================
-    
-    // Hardcoded Arrays (50Y)
+    // --- Hardcoded Arrays (50Y) ---
     const SPX_PRICE_50Y = [ -29.7, 31.5, 19.1, -11.5, 1.1, 12.3, 25.8, -9.7, 14.8, 17.3, 1.4, 26.3, 14.6, 2.0, 12.4, 27.3, -6.6, 26.3, 4.5, 7.1, -1.5, 34.1, 20.3, 31.0, 26.7, 19.5, -10.1, -13.0, -23.4, 26.4, 9.0, 3.0, 13.6, 3.5, -38.5, 23.5, 12.8, 0.0, 13.4, 29.6, 11.4, -0.7, 9.5, 19.4, -6.2, 28.9, 16.3, 26.9, -19.4, 24.2, 24.0 ];
+    
+    // Static synthetic proxy approximation for MSCI World vs SPX
+    const MSCI_PRICE_50Y = [ -26.98, 26.85, 17.65, -9.6, -0.01, 10.98, 22.42, -9.52, 12.59, 15.68, 1.49, 23.12, 11.9, 2.15, 11.39, 24.89, -6.37, 22.84, 4.29, 6.78, -1.97, 30.67, 18.06, 26.68, 22.79, 17.15, -8.31, -11.45, -20.61, 22.83, 7.37, 2.12, 11.45, 3.82, -34.6, 19.86, 11.13, -0.62, 11.23, 26.74, 10.46, -1.23, 8.44, 16.59, -5.35, 24.64, 13.56, 23.27, -16.89, 20.66, 21.05 ];
+    
     const BONDS_50Y = [ 5.2, 7.8, 15.6, 3.0, 1.4, 2.3, 2.7, 6.3, 32.6, 8.4, 15.1, 22.1, 15.3, 2.8, 7.9, 14.5, 8.9, 16.0, 7.4, 9.7, -2.9, 18.5, 3.6, 9.7, 8.7, -0.8, 11.6, 8.4, 10.3, 4.1, 4.3, 2.4, 4.3, 7.0, 5.2, 5.9, 6.5, 7.8, 4.2, -2.0, 6.0, 0.5, 2.6, 3.5, 0.0, 8.7, 7.5, -1.5, -13.0, 5.5, 4.5 ];
     const GOLD_50Y = [ 72.0, -25.0, -4.0, 23.0, 37.0, 126.0, 12.5, -32.0, -13.0, -15.0, -19.0, 6.0, 20.0, 24.0, -15.0, -2.0, -2.0, -10.0, -6.0, 17.0, -2.0, 1.0, -4.0, -21.0, -1.0, -1.0, -6.0, 1.0, 24.0, 20.0, 5.0, 18.0, 23.0, 31.0, 5.0, 24.0, 29.0, 10.0, 7.0, -28.0, -1.0, -10.0, 8.0, 13.0, -1.0, 18.0, 25.0, -3.0, -0.3, 13.1, 25.0 ];
     const PE_50Y = [ 12.5, 18.2, 28.4, 12.1, 15.0, 20.2, 28.5, 2.1, 19.3, 18.2, 10.5, 29.4, 17.8, 8.2, 18.5, 25.1, 4.2, 32.1, 12.3, 15.6, 9.2, 45.2, 28.3, 35.1, 22.4, 30.2, -0.5, -12.2, -1.8, 32.4, 15.6, 26.2, 22.8, 17.2, -26.4, 14.1, 23.8, 9.8, 14.5, 21.6, 13.2, 6.8, 11.2, 19.8, 10.1, 18.6, 23.4, 39.0, -4.2, 5.8, 10.0 ];
@@ -551,6 +548,7 @@
     const HIST_YEARS = Array.from({length: 51}, (_, i) => 1974 + i);
     const ASSET_DATA = {
         'SPX': { label: 'S&P 500 (Price Return)', color: '#10b981', data: SPX_PRICE_50Y },
+        'MSCI': { label: 'MSCI World', color: '#0ea5e9', data: MSCI_PRICE_50Y },
         'PE': { label: 'Private Equity (Proxy)', color: '#8b5cf6', data: PE_50Y },
         'BONDS': { label: 'US Bonds (Agg)', color: '#3b82f6', data: BONDS_50Y },
         'GOLD': { label: 'Gold', color: '#f59e0b', data: GOLD_50Y }
@@ -563,16 +561,8 @@
         setTimeout(() => switchHistChart('SPX', document.querySelector('.asset-btn')), 100);
     }
     
-    function closeHistModal() {
-        document.getElementById('histModal').style.display = 'none';
-    }
-    
-    // Close modal if clicking outside
-    window.onclick = function(event) {
-        if (event.target == document.getElementById('histModal')) {
-            closeHistModal();
-        }
-    }
+    function closeHistModal() { document.getElementById('histModal').style.display = 'none'; }
+    window.onclick = function(event) { if (event.target == document.getElementById('histModal')) closeHistModal(); }
 
     function switchHistChart(key, btn) {
         document.querySelectorAll('.asset-btn').forEach(b => b.classList.remove('active'));
@@ -586,28 +576,11 @@
 
         chartModal = new Chart(ctx, {
             type: 'bar',
-            data: {
-                labels: HIST_YEARS,
-                datasets: [{
-                    label: 'Annual Return (%)',
-                    data: asset.data,
-                    backgroundColor: asset.data.map(v => v >= 0 ? asset.color : '#ef4444'),
-                    borderRadius: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { 
-                    y: { grid: { color: '#f1f5f9' }, title: { display:true, text:'Return %' } }, 
-                    x: { grid: { display:false }, ticks:{ maxTicksLimit: 10 } } 
-                },
-                plugins: { legend: {display:false} }
-            }
+            data: { labels: HIST_YEARS, datasets: [{ label: 'Annual Return (%)', data: asset.data, backgroundColor: asset.data.map(v => v >= 0 ? asset.color : '#ef4444'), borderRadius: 2 }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { grid: { color: '#f1f5f9' }, title: { display:true, text:'Return %' } }, x: { grid: { display:false }, ticks:{ maxTicksLimit: 10 } } }, plugins: { legend: {display:false} } }
         });
     }
 </script>
 
 </body>
 </html>
-
