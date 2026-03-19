@@ -26,9 +26,7 @@ function normalCDF(z) {
 }
 
 function bsPrice(S, K, T, r, v) {
-    // Intrinsic Value at Expiration
     if (T <= 0.001) return Math.max(0, S - K);
-    
     const d1 = (Math.log(S / K) + (0.5 * v * v) * T) / (v * Math.sqrt(T));
     const d2 = d1 - v * Math.sqrt(T);
     return Math.exp(-r * T) * (S * normalCDF(d1) - K * normalCDF(d2));
@@ -36,22 +34,22 @@ function bsPrice(S, K, T, r, v) {
 
 // --- Main Calculation Function ---
 function calculateGSIProjection(inputs) {
-    // Extract inputs with fallbacks for legacy 'spx' naming conventions
     const investment = inputs.investment;         
     const currentSpot = inputs.currentSpot;        
     const indexPriceReturn = inputs.indexPriceReturn !== undefined ? inputs.indexPriceReturn : inputs.spxPriceReturn;     
     const indexDivYield = inputs.indexDivYield !== undefined ? inputs.indexDivYield : inputs.spxDivYield;        
-    const creditYield = inputs.creditYield;        
+    
+    // Dynamic SOFR & Credit Yield Integration
+    const sofr = inputs.sofr !== undefined ? inputs.sofr : (inputs.riskFreeRate !== undefined ? inputs.riskFreeRate : 4.0);
+    const creditYield = inputs.creditYield !== undefined ? inputs.creditYield : (sofr + 6.0);
+    
     const volatility = inputs.volatility;         
     const mgmtFee = inputs.mgmtFee;            
     const carryFee = inputs.carryFee;           
-    const riskFreeRate = inputs.riskFreeRate;       
     const years = inputs.years;               
 
-    // 1. Setup Scaling Ratio
     const ratio = investment / MASTER_COST_BASIS;
     
-    // 2. Initial Unit Values
     let uValCredit = 0;
     let uValOpt = 0;
     let uQuantityOpt = 0;
@@ -70,63 +68,52 @@ function calculateGSIProjection(inputs) {
     const initialNAV = uValCredit + uValOpt;
     const initialNotional = uValCredit + (uQuantityOpt * currentSpot);
 
-    // 3. Prepare Loop Variables
     const gPrice = indexPriceReturn / 100;
+    const gSpxFp = (indexPriceReturn - sofr) / 100; // SPXFP is dragged by SOFR
     const gTotal = (indexPriceReturn + indexDivYield) / 100; 
     const gCredit = creditYield / 100;
     const vol = volatility / 100;
-    const r = riskFreeRate / 100;
+    const r = sofr / 100;
     const mFee = mgmtFee / 100;
     const cFee = carryFee / 100;
 
-    // Data Series Output (Updated to use generic 'index' while keeping 'spx' for backward compatibility)
     const results = {
         labels: [],
         gsi: [initialNAV],
         credit: [uValCredit],
         options: [uValOpt],
         static: [], 
-        index: [investment], // Generic naming
-        spx: [investment],   // Legacy alias
+        index: [investment], 
+        spx: [investment],   
         pe: [investment],
         bonds: [investment]
     };
     
-    // Initial Intrinsic calculation
     const initIntrinsic = Math.max(0, currentSpot - weightedStrike) * uQuantityOpt;
     results.static.push(initIntrinsic);
     
-    // Date Setup
     const startDate = new Date();
-
-    // 4. Projection Loop (Quarterly)
     const steps = years * 4;
     
     for (let q = 1; q <= steps; q++) {
         const t = q * 0.25; 
         
-        // Generate Date Label (e.g., "Feb 26")
         const d = new Date(startDate);
         d.setMonth(d.getMonth() + (q * 3));
         const dateLabel = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
         
         // --- A. GSI Calculation ---
-        const S_fut = currentSpot * Math.pow(1 + gPrice, t); 
-        
-        // Credit Growth
         let valCreditGross = uValCredit * Math.pow(1 + gCredit, t);
         
-        // Option Re-pricing
+        // Option Re-pricing against the Forward Price (SPXFP)
+        const S_fut_fp = currentSpot * Math.pow(1 + gSpxFp, t); 
         let T_rem = Math.max(0, years - t);
-        const optPrice = bsPrice(S_fut, weightedStrike, T_rem, r, vol);
+        const optPrice = bsPrice(S_fut_fp, weightedStrike, T_rem, r, vol);
         let valOptGross = optPrice * uQuantityOpt;
         
-        // Calculate Intrinsic Value (Static) for comparison
-        const valIntrinsic = Math.max(0, S_fut - weightedStrike) * uQuantityOpt;
+        const valIntrinsic = Math.max(0, S_fut_fp - weightedStrike) * uQuantityOpt;
 
-        // Apply Fees to Components
         const mgmtDrag = Math.pow(1 - mFee, t);
-        
         let finalCredit = valCreditGross * mgmtDrag;
         let finalOpt = valOptGross * mgmtDrag;
         let finalIntrinsic = valIntrinsic * mgmtDrag;
@@ -138,12 +125,8 @@ function calculateGSIProjection(inputs) {
         if (profit > 0) {
             const carryAmt = profit * cFee;
             finalPort -= carryAmt;
-            
-            // Pro-rate carry deduction
             const creditShare = finalCredit / (finalCredit + finalOpt);
             finalCredit -= (carryAmt * creditShare);
-            
-            // Deduct carry from Option & Intrinsic lines so they still meet
             const optShare = 1 - creditShare;
             finalOpt -= (carryAmt * optShare);
             finalIntrinsic -= (carryAmt * optShare);
@@ -158,9 +141,8 @@ function calculateGSIProjection(inputs) {
         const indexNetGrowth = gTotal - 0.0003; 
         const valIndex = investment * Math.pow(1 + indexNetGrowth, t);
         results.index.push(valIndex);
-        results.spx.push(valIndex); // Legacy alias
+        results.spx.push(valIndex); 
 
-        // PE (Proxy)
         const peBeta = 1.2;
         const peMgmt = 0.015;
         const peCarry = 0.20;
@@ -171,7 +153,6 @@ function calculateGSIProjection(inputs) {
         if (peProfit > 0) valPE -= (peProfit * peCarry);
         results.pe.push(valPE);
 
-        // Bonds
         const bondRate = 0.062;
         const valBond = investment * Math.pow(1 + bondRate, t);
         results.bonds.push(valBond);
@@ -179,12 +160,10 @@ function calculateGSIProjection(inputs) {
         results.labels.push(dateLabel);
     }
 
-    // 5. Metrics
     const finalVal = results.gsi[results.gsi.length - 1];
     const totalReturn = finalVal / investment;
     const irr = (Math.pow(totalReturn, 1/years) - 1) * 100;
     
-    // Index Metrics
     const finalIndex = results.index[results.index.length - 1];
     const indexTotalReturn = finalIndex / investment;
     const indexIrr = (Math.pow(indexTotalReturn, 1/years) - 1) * 100;
@@ -199,7 +178,6 @@ function calculateGSIProjection(inputs) {
             indexFinal: finalIndex,
             indexMoic: indexTotalReturn,
             indexIrr: indexIrr,
-            // Legacy aliases mapping to the new generic index variables
             spxFinal: finalIndex, 
             spxMoic: indexTotalReturn,
             spxIrr: indexIrr

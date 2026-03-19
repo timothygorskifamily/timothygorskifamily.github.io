@@ -10,15 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.css">
 
     <style>
-        :root { 
-            --primary: #0f172a; 
-            --accent: #3b82f6; 
-            --bg: #f8fafc; 
-            --card: #ffffff; 
-            --border: #e2e8f0; 
-            --text-sub: #64748b;
-        }
-
+        :root { --primary: #0f172a; --accent: #3b82f6; --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; --text-sub: #64748b; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #334155; margin: 0; padding: 20px; }
         .container { max-width: 1400px; margin: auto; background: var(--card); padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
         .nav-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 0 20px; height: 64px; border-bottom: 1px solid var(--border); border-radius: 8px; }
@@ -39,14 +31,19 @@
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--primary); }
         input[type="number"], select, input[type="text"] { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; box-sizing: border-box; background: #fff; color: var(--primary); }
-        input:disabled { background: #f1f5f9; color: #94a3b8; }
+        input:disabled { background: #f1f5f9; color: #94a3b8; font-weight: bold; }
+        
+        .range-slider { -webkit-appearance: none; width: 100%; height: 8px; border-radius: 5px; background: #cbd5e1; outline: none; margin-top: 5px; }
+        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; }
         
         .toggles { display: flex; gap: 20px; flex-wrap: wrap; padding-top: 15px; border-top: 1px solid var(--border); align-items: center; }
         .checkbox-lbl { font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--primary); }
         .chart-section { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 25px; }
         .chart-wrapper { position: relative; height: 500px; width: 100%; }
+        
         #dateSlider { margin: 0 20px 40px 20px; height: 10px; }
         .noUi-connect { background: var(--accent); }
+        .noUi-handle { cursor: grab; }
 
         .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
         .metric-box { padding: 15px; border-radius: 12px; background: #f1f5f9; border: 1px solid var(--border); text-align: center; }
@@ -61,6 +58,10 @@
         .metric-stats { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
         .stat-badge { font-size: 0.75rem; font-weight: 600; background: white; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; }
         .disclaimer-section { font-size: 0.7rem; color: #94a3b8; margin-top: 50px; padding-top: 30px; border-top: 1px solid var(--border); line-height: 1.5; }
+
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .text-sm { font-size: 0.8rem; }
+        .text-blue { color: #1e40af; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -76,17 +77,17 @@
 
     <div class="header">
         <div>
-            <h1>Historical Strategy Analysis <span style="font-size:0.5em; background:#f1f5f9; padding:4px 8px; border-radius:4px;">Prototype</span></h1>
-            <div class="sub">Component Breakdown & Fee Adjustments (1974 - 2024)</div>
+            <h1>Rolling 10-Year Strategy Analysis <span style="font-size:0.5em; background:#f1f5f9; padding:4px 8px; border-radius:4px;">Prototype</span></h1>
+            <div class="sub">Dynamic Option Allocation & Volatility Pricing (1974 - 2024)</div>
         </div>
-        <div><span class="badge">Backtest Mode</span></div>
+        <div><span class="badge">10-Year Tranche Mode</span></div>
     </div>
 
     <div class="formula-bar">
-        <span>🔵 GSI Total =</span>
-        <span>🟢 Credit Yield (Safety)</span>
+        <span>🔵 10-Year Total =</span>
+        <span>🟢 Credit Yield (SOFR + 6%)</span>
         <span>+</span>
-        <span>🟠 Option Strategy (Net P&L)</span>
+        <span>🟠 Blended 10-Year Options (SPXFP + SPX)</span>
     </div>
 
     <div class="controls-wrapper">
@@ -99,21 +100,16 @@
                 </div>
                 <div class="input-group">
                     <label>Underlying Asset</label>
-                    <select id="underlyingAsset">
-                        <option value="SPX" selected>S&P 500 (SPX)</option>
-                        <option value="MSCI">MSCI World</option>
-                    </select>
+                    <div style="padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; background: #f1f5f9; color: var(--text-sub); font-weight: bold;">
+                        S&P 500 (SPX)
+                    </div>
                 </div>
-            </div>
-
-            <div>
-                <div class="section-title">GSI Fee Structure</div>
                 <div class="input-group">
-                    <label>Management Fee (%)</label>
+                    <label>Management Fee (Annual %)</label>
                     <input type="number" id="mgmtFee" value="0.5" step="0.1" min="0" max="5">
                 </div>
                 <div class="input-group">
-                    <label>Performance Fee (Carry)</label>
+                    <label>Performance Fee (Accrued Carry)</label>
                     <select id="perfFee">
                         <option value="0">0%</option>
                         <option value="0.07">7%</option>
@@ -123,15 +119,53 @@
                 </div>
             </div>
 
-            <div>
-                <div class="section-title">Strategy Calibration</div>
+            <div style="grid-column: span 2; background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+                <div class="section-title">Option Engine (52% Total Budget)</div>
+                
                 <div class="input-group">
-                    <label>Total Notional Leverage (x)</label>
-                    <input type="number" id="leverageInput" value="2.6" step="0.1" min="0.5" max="5.0" style="font-weight:bold; color:var(--accent);">
+                    <div class="flex-between">
+                        <label>Option Allocation Blend</label>
+                        <span id="allocDisplay" class="text-blue text-sm">0% SPXFP / 100% SPX</span>
+                    </div>
+                    <input type="range" id="allocSlider" min="0" max="100" value="0" class="range-slider">
+                    <div class="flex-between text-sm" style="color: #64748b; margin-top: 5px;">
+                        <span>100% SPX</span>
+                        <span>100% SPXFP</span>
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label>Effective Participation</label>
-                    <input type="text" id="effPart" value="~1.56x (Delta Adj)" disabled>
+
+                <div class="input-group" style="margin-top: 20px;">
+                    <div class="flex-between">
+                        <label>Implied Volatility (IV)</label>
+                        <span id="ivDisplay" class="text-blue text-sm">22%</span>
+                    </div>
+                    <input type="range" id="ivSlider" min="10" max="40" value="22" step="1" class="range-slider">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; background: #f8fafc; padding: 15px; border-radius: 8px;">
+                    <div>
+                        <label style="font-size: 0.75rem; color: #64748b; font-weight: bold; text-transform: uppercase;">SPXFP (Forward Price)</label>
+                        <div style="font-size: 0.85rem; margin-top: 5px;">Cost: <span id="costSpxFpDisplay" class="text-blue">20.0%</span></div>
+                        <div style="font-size: 0.85rem;">Budget: <span id="budgetSpxFpDisplay">0.0%</span></div>
+                        <div style="font-size: 0.85rem;">Leverage: <span id="levSpxFpDisplay" style="font-weight: bold; color: #0f172a;">0.00x</span></div>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.75rem; color: #64748b; font-weight: bold; text-transform: uppercase;">SPX</label>
+                        <div style="font-size: 0.85rem; margin-top: 5px;">Cost: <span id="costSpxDisplay" class="text-blue">33.0%</span></div>
+                        <div style="font-size: 0.85rem;">Budget: <span id="budgetSpxDisplay">52.0%</span></div>
+                        <div style="font-size: 0.85rem;">Leverage: <span id="levSpxDisplay" style="font-weight: bold; color: #0f172a;">1.58x</span></div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; text-align: center; padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center;">
+                    <div>
+                        <span style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; font-weight: bold;">Option Div. Capture:</span>
+                        <span style="font-size: 1.0rem; font-weight: 800; color: #10b981; margin-left: 5px;">0.40%</span>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; font-weight: bold;">Total Leverage:</span>
+                        <span id="totalLeverageDisplay" style="font-size: 1.2rem; font-weight: 800; color: var(--accent); margin-left: 10px;">1.58x</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -140,7 +174,7 @@
             <strong style="font-size:0.9rem; align-self:center; margin-right:10px;">Display Layers:</strong>
             <label class="checkbox-lbl"><input type="checkbox" id="showCredit" checked> Credit Floor</label>
             <label class="checkbox-lbl"><input type="checkbox" id="showOption" checked> Option P&L</label>
-            <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;"><input type="checkbox" id="showIndex" checked> <span id="toggleIdxLabel">S&P 500</span></label>
+            <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;"><input type="checkbox" id="showIndex" checked> S&P 500</label>
             <label class="checkbox-lbl"><input type="checkbox" id="showPE"> Private Equity</label>
             <label class="checkbox-lbl"><input type="checkbox" id="showBonds"> Bonds</label>
         </div>
@@ -149,7 +183,7 @@
     <div class="chart-section">
         <div class="chart-wrapper"><canvas id="mainChart"></canvas></div>
         <div style="padding: 0 20px; margin-top:20px;">
-            <p style="text-align:center; font-size:0.85rem; color:var(--text-sub); margin-bottom:25px;">Zoom History: 1974 - 2024</p>
+            <p id="sliderLabel" style="text-align:center; font-size:0.85rem; font-weight:bold; color:var(--text-sub); margin-bottom:25px;">Select 10-Year Block: 1998 to 2008</p>
             <div id="dateSlider"></div>
         </div>
     </div>
@@ -160,166 +194,189 @@
 <script>
     // --- Data Processing (1974-2024) ---
     const rawData = [
-        { year: 1974, rate: 10.5, spx: -26.47, bonds: 5.0,  pe: -20.5 },
-        { year: 1975, rate: 5.8,  spx: 37.20,  bonds: 7.0,  pe: 45.0 },
-        { year: 1976, rate: 5.0,  spx: 23.84,  bonds: 15.0, pe: 35.0 },
-        { year: 1977, rate: 5.5,  spx: -7.18,  bonds: 3.0,  pe: -2.0 },
-        { year: 1978, rate: 7.9,  spx: 6.56,   bonds: 1.0,  pe: 12.0 },
-        { year: 1979, rate: 11.2, spx: 18.44,  bonds: 2.0,  pe: 25.0 },
-        { year: 1980, rate: 13.3, spx: 32.50,  bonds: 3.0,  pe: 40.0 },
-        { year: 1981, rate: 16.4, spx: -4.92,  bonds: 6.0,  pe: -5.0 },
-        { year: 1982, rate: 12.2, spx: 21.55,  bonds: 32.0, pe: 28.0 },
-        { year: 1983, rate: 9.1,  spx: 22.56,  bonds: 8.0,  pe: 25.0 },
-        { year: 1984, rate: 10.2, spx: 6.27,   bonds: 15.0, pe: 10.0 },
-        { year: 1985, rate: 8.1,  spx: 31.73,  bonds: 22.0, pe: 35.0 },
-        { year: 1986, rate: 6.8,  spx: 18.67,  bonds: 15.0, pe: 20.0 },
-        { year: 1987, rate: 6.6,  spx: 5.25,   bonds: 2.0,  pe: 8.0 },
-        { year: 1988, rate: 7.5,  spx: 16.61,  bonds: 7.0,  pe: 22.0 },
-        { year: 1989, rate: 9.2,  spx: 31.69,  bonds: 14.0, pe: 25.0 },
-        { year: 1990, rate: 8.1,  spx: -3.10,  bonds: 8.0,  pe: -5.0 },
-        { year: 1991, rate: 5.7,  spx: 30.47,  bonds: 16.0, pe: 35.0 },
-        { year: 1992, rate: 3.5,  spx: 7.62,   bonds: 7.0,  pe: 15.0 },
-        { year: 1993, rate: 3.0,  spx: 10.08,  bonds: 9.0,  pe: 18.0 },
-        { year: 1994, rate: 4.2,  spx: 1.32,   bonds: -2.0, pe: 5.0 },
-        { year: 1995, rate: 5.8,  spx: 37.58,  bonds: 18.0, pe: 40.0 },
-        { year: 1996, rate: 5.3,  spx: 22.96,  bonds: 3.0,  pe: 28.0 },
-        { year: 1997, rate: 5.5,  spx: 33.36,  bonds: 9.0,  pe: 32.0 },
-        { year: 1998, rate: 5.3,  spx: 28.58,  bonds: 8.0,  pe: 25.0 },
-        { year: 1999, rate: 5.0,  spx: 21.04,  bonds: -0.8, pe: 45.0 },
-        { year: 2000, rate: 6.2,  spx: -9.10,  bonds: 11.0, pe: -5.0 },
-        { year: 2001, rate: 3.8,  spx: -11.89, bonds: 8.0,  pe: -12.0 },
-        { year: 2002, rate: 1.6,  spx: -22.10, bonds: 10.0, pe: -15.0 },
-        { year: 2003, rate: 1.1,  spx: 28.68,  bonds: 4.0,  pe: 30.0 },
-        { year: 2004, rate: 1.3,  spx: 10.88,  bonds: 4.3,  pe: 15.2 },
-        { year: 2005, rate: 3.2,  spx: 4.91,   bonds: 2.4,  pe: 12.5 },
-        { year: 2006, rate: 4.9,  spx: 15.79,  bonds: 4.3,  pe: 18.4 },
-        { year: 2007, rate: 5.0,  spx: 5.49,   bonds: 6.9,  pe: 15.3 },
-        { year: 2008, rate: 1.9,  spx: -37.0,  bonds: 5.2,  pe: -22.0 },
-        { year: 2009, rate: 0.1,  spx: 26.46,  bonds: 5.9,  pe: 14.5 },
-        { year: 2010, rate: 0.1,  spx: 15.06,  bonds: 6.5,  pe: 18.2 },
-        { year: 2011, rate: 0.1,  spx: 2.11,   bonds: 7.8,  pe: 8.4 },
-        { year: 2012, rate: 0.1,  spx: 16.00,  bonds: 4.2,  pe: 14.3 },
-        { year: 2013, rate: 0.1,  spx: 32.39,  bonds: -2.0, pe: 21.5 },
-        { year: 2014, rate: 0.1,  spx: 13.69,  bonds: 5.9,  pe: 12.8 },
-        { year: 2015, rate: 0.1,  spx: 1.38,   bonds: 0.5,  pe: 9.1 },
-        { year: 2016, rate: 0.4,  spx: 11.96,  bonds: 2.6,  pe: 13.5 },
-        { year: 2017, rate: 1.0,  spx: 21.83,  bonds: 3.5,  pe: 19.8 },
-        { year: 2018, rate: 1.8,  spx: -4.38,  bonds: 0.0,  pe: 6.5 },
-        { year: 2019, rate: 2.1,  spx: 31.49,  bonds: 8.7,  pe: 18.7 },
-        { year: 2020, rate: 0.3,  spx: 18.40,  bonds: 7.5,  pe: 24.5 },
-        { year: 2021, rate: 0.05, spx: 28.71,  bonds: -1.5, pe: 32.6 },
-        { year: 2022, rate: 1.6,  spx: -18.11, bonds: -13.0,pe: -4.5 },
-        { year: 2023, rate: 5.0,  spx: 26.29,  bonds: 5.5,  pe: 8.5 },
-        { year: 2024, rate: 5.3,  spx: 25.00,  bonds: 1.8,  pe: 9.0 }
+        { year: 1974, rate: 10.5, spx: -26.47, bonds: 5.0, pe: -20.5 }, { year: 1975, rate: 5.8, spx: 37.20, bonds: 7.0, pe: 45.0 }, { year: 1976, rate: 5.0, spx: 23.84, bonds: 15.0, pe: 35.0 }, { year: 1977, rate: 5.5, spx: -7.18, bonds: 3.0, pe: -2.0 }, { year: 1978, rate: 7.9, spx: 6.56, bonds: 1.0, pe: 12.0 }, { year: 1979, rate: 11.2, spx: 18.44, bonds: 2.0, pe: 25.0 }, { year: 1980, rate: 13.3, spx: 32.50, bonds: 3.0, pe: 40.0 }, { year: 1981, rate: 16.4, spx: -4.92, bonds: 6.0, pe: -5.0 }, { year: 1982, rate: 12.2, spx: 21.55, bonds: 32.0, pe: 28.0 }, { year: 1983, rate: 9.1, spx: 22.56, bonds: 8.0, pe: 25.0 }, { year: 1984, rate: 10.2, spx: 6.27, bonds: 15.0, pe: 10.0 }, { year: 1985, rate: 8.1, spx: 31.73, bonds: 22.0, pe: 35.0 }, { year: 1986, rate: 6.8, spx: 18.67, bonds: 15.0, pe: 20.0 }, { year: 1987, rate: 6.6, spx: 5.25, bonds: 2.0, pe: 8.0 }, { year: 1988, rate: 7.5, spx: 16.61, bonds: 7.0, pe: 22.0 }, { year: 1989, rate: 9.2, spx: 31.69, bonds: 14.0, pe: 25.0 }, { year: 1990, rate: 8.1, spx: -3.10, bonds: 8.0, pe: -5.0 }, { year: 1991, rate: 5.7, spx: 30.47, bonds: 16.0, pe: 35.0 }, { year: 1992, rate: 3.5, spx: 7.62, bonds: 7.0, pe: 15.0 }, { year: 1993, rate: 3.0, spx: 10.08, bonds: 9.0, pe: 18.0 }, { year: 1994, rate: 4.2, spx: 1.32, bonds: -2.0, pe: 5.0 }, { year: 1995, rate: 5.8, spx: 37.58, bonds: 18.0, pe: 40.0 }, { year: 1996, rate: 5.3, spx: 22.96, bonds: 3.0, pe: 28.0 }, { year: 1997, rate: 5.5, spx: 33.36, bonds: 9.0, pe: 32.0 }, { year: 1998, rate: 5.3, spx: 28.58, bonds: 8.0, pe: 25.0 }, { year: 1999, rate: 5.0, spx: 21.04, bonds: -0.8, pe: 45.0 }, { year: 2000, rate: 6.2, spx: -9.10, bonds: 11.0, pe: -5.0 }, { year: 2001, rate: 3.8, spx: -11.89, bonds: 8.0, pe: -12.0 }, { year: 2002, rate: 1.6, spx: -22.10, bonds: 10.0, pe: -15.0 }, { year: 2003, rate: 1.1, spx: 28.68, bonds: 4.0, pe: 30.0 }, { year: 2004, rate: 1.3, spx: 10.88, bonds: 4.3, pe: 15.2 }, { year: 2005, rate: 3.2, spx: 4.91, bonds: 2.4, pe: 12.5 }, { year: 2006, rate: 4.9, spx: 15.79, bonds: 4.3, pe: 18.4 }, { year: 2007, rate: 5.0, spx: 5.49, bonds: 6.9, pe: 15.3 }, { year: 2008, rate: 1.9, spx: -37.0, bonds: 5.2, pe: -22.0 }, { year: 2009, rate: 0.1, spx: 26.46, bonds: 5.9, pe: 14.5 }, { year: 2010, rate: 0.1, spx: 15.06, bonds: 6.5, pe: 18.2 }, { year: 2011, rate: 0.1, spx: 2.11, bonds: 7.8, pe: 8.4 }, { year: 2012, rate: 0.1, spx: 16.00, bonds: 4.2, pe: 14.3 }, { year: 2013, rate: 0.1, spx: 32.39, bonds: -2.0, pe: 21.5 }, { year: 2014, rate: 0.1, spx: 13.69, bonds: 5.9, pe: 12.8 }, { year: 2015, rate: 0.1, spx: 1.38, bonds: 0.5, pe: 9.1 }, { year: 2016, rate: 0.4, spx: 11.96, bonds: 2.6, pe: 13.5 }, { year: 2017, rate: 1.0, spx: 21.83, bonds: 3.5, pe: 19.8 }, { year: 2018, rate: 1.8, spx: -4.38, bonds: 0.0, pe: 6.5 }, { year: 2019, rate: 2.1, spx: 31.49, bonds: 8.7, pe: 18.7 }, { year: 2020, rate: 0.3, spx: 18.40, bonds: 7.5, pe: 24.5 }, { year: 2021, rate: 0.05, spx: 28.71, bonds: -1.5, pe: 32.6 }, { year: 2022, rate: 1.6, spx: -18.11, bonds: -13.0, pe: -4.5 }, { year: 2023, rate: 5.0, spx: 26.29, bonds: 5.5, pe: 8.5 }, { year: 2024, rate: 5.3, spx: 25.00, bonds: 1.8, pe: 9.0 }
     ];
 
-    // Map synthetic MSCI approximation into the dataset for the prototype
-    const historicalData = rawData.map(d => ({
-        ...d,
-        msci: Number((d.spx * 0.88 + (Math.random() * 2 - 1)).toFixed(2)) // Slight beta adjustment proxy
-    }));
+    const historicalData = rawData;
 
-    const CONSTANTS = { CREDIT_SPREAD: 6.0, CREDIT_ALLOC: 0.48, OPTION_ALLOC: 0.52, START_DELTA: 0.60 };
+    const CONSTANTS = { CREDIT_SPREAD: 6.0, CREDIT_ALLOC: 0.48, TOTAL_OPT_BUDGET: 0.52, START_DELTA: 0.60, OPT_DIV_CAPTURE: 0.004 };
 
     let myChart = null;
     let slider = null;
 
-    function calculate(startYear, endYear) {
+    // --- Dynamic Pricing Engine ---
+    function updateOptionPricing() {
+        const iv = parseFloat(document.getElementById('ivSlider').value);
+        const allocSpxFp = parseFloat(document.getElementById('allocSlider').value);
+        const allocSpx = 100 - allocSpxFp;
+
+        document.getElementById('ivDisplay').innerText = iv + "%";
+        document.getElementById('allocDisplay').innerText = `${allocSpxFp}% SPXFP / ${allocSpx}% SPX`;
+
+        // Linear scaling: Baseline is 20% (SPXFP) and 33% (SPX) at 22% IV
+        const costSpxFp = 0.20 * (iv / 22);
+        const costSpx = 0.33 * (iv / 22);
+
+        // Budget split
+        const budgetSpxFp = CONSTANTS.TOTAL_OPT_BUDGET * (allocSpxFp / 100);
+        const budgetSpx = CONSTANTS.TOTAL_OPT_BUDGET * (allocSpx / 100);
+
+        // Resulting Leverage
+        const levSpxFp = budgetSpxFp > 0 ? (budgetSpxFp / costSpxFp) : 0;
+        const levSpx = budgetSpx > 0 ? (budgetSpx / costSpx) : 0;
+        const totalLev = levSpxFp + levSpx;
+
+        // Update UI
+        document.getElementById('costSpxFpDisplay').innerText = (costSpxFp * 100).toFixed(1) + "%";
+        document.getElementById('costSpxDisplay').innerText = (costSpx * 100).toFixed(1) + "%";
+        
+        document.getElementById('budgetSpxFpDisplay').innerText = (budgetSpxFp * 100).toFixed(1) + "%";
+        document.getElementById('budgetSpxDisplay').innerText = (budgetSpx * 100).toFixed(1) + "%";
+        
+        document.getElementById('levSpxFpDisplay').innerText = levSpxFp.toFixed(2) + "x";
+        document.getElementById('levSpxDisplay').innerText = levSpx.toFixed(2) + "x";
+        document.getElementById('totalLeverageDisplay').innerText = totalLev.toFixed(2) + "x";
+
+        return { levSpxFp, levSpx, budgetSpxFp, budgetSpx };
+    }
+
+    function calculate10YearBlock(startYear) {
         const startCap = parseFloat(document.getElementById('startCap').value);
         const mgmtFeePct = parseFloat(document.getElementById('mgmtFee').value) / 100;
         const perfFeePct = parseFloat(document.getElementById('perfFee').value);
-        const maxLeverage = parseFloat(document.getElementById('leverageInput').value);
-        const underlying = document.getElementById('underlyingAsset').value;
 
-        const subset = historicalData.filter(d => d.year >= startYear && d.year <= endYear);
-        const labels = ['Start', ...subset.map(d => d.year)];
+        // Get dynamically calculated leverages and budgets
+        const pricing = updateOptionPricing();
         
-        const data = { total: [startCap], credit: [startCap], optionVal: [0], indexVal: [startCap], pe: [startCap], bonds: [startCap] };
+        let creditVal = startCap * CONSTANTS.CREDIT_ALLOC;
+        
+        let premiumSpxFp = startCap * pricing.budgetSpxFp;
+        let notionalSpxFp = startCap * pricing.levSpxFp;
+        
+        let premiumSpx = startCap * pricing.budgetSpx;
+        let notionalSpx = startCap * pricing.levSpx;
 
-        let hwmGSI = startCap;
-        let hwmPE = startCap;
+        let cumSpx = 1.0;
+        let cumSpxOpt = 1.0;
+        let cumSofr = 1.0;
 
-        subset.forEach(yr => {
-            const prev = { total: data.total[data.total.length - 1], credit: data.credit[data.credit.length - 1], indexVal: data.indexVal[data.indexVal.length - 1], pe: data.pe[data.pe.length - 1], bonds: data.bonds[data.bonds.length - 1] };
-
-            const dynamicYield = (yr.rate + CONSTANTS.CREDIT_SPREAD) / 100;
-            data.credit.push(prev.credit * (1 + dynamicYield)); 
-
-            // Switch Math to MSCI vs SPX dynamically
-            const idxRet = (underlying === 'SPX' ? yr.spx : yr.msci) / 100;
-            
-            let participation = maxLeverage * CONSTANTS.START_DELTA;
-            if(idxRet > 0) participation += (idxRet * 0.4); 
-            if(idxRet < 0) participation -= (Math.abs(idxRet) * 0.4);
-            if(participation > maxLeverage) participation = maxLeverage;
-            if(participation < 0.2) participation = 0.2;
-
-            let optionReturn = participation * idxRet;
-            if(idxRet > -0.05 && idxRet < 0.05) optionReturn -= 0.03;
-            if (optionReturn < -CONSTANTS.OPTION_ALLOC) optionReturn = -CONSTANTS.OPTION_ALLOC;
-
-            const grossReturnGSI = (CONSTANTS.CREDIT_ALLOC * dynamicYield) + optionReturn;
-
-            let valGrossGSI = prev.total * (1 + grossReturnGSI);
-            let valPostMgmtGSI = valGrossGSI * (1 - mgmtFeePct);
-            let finalValGSI = valPostMgmtGSI;
-
-            if (valPostMgmtGSI > hwmGSI) {
-                const fee = (valPostMgmtGSI - hwmGSI) * perfFeePct;
-                finalValGSI = valPostMgmtGSI - fee;
-                hwmGSI = finalValGSI;
-            }
-
-            data.total.push(finalValGSI);
-            data.optionVal.push(finalValGSI - (prev.credit * (1 + dynamicYield)));
-
-            const peGrossReturn = yr.pe / 100;
-            let valPostMgmtPE = prev.pe * (1 + peGrossReturn) * (1 - 0.015); 
-            let finalValPE = valPostMgmtPE;
-            if (valPostMgmtPE > hwmPE) {
-                finalValPE = valPostMgmtPE - ((valPostMgmtPE - hwmPE) * 0.20);
-                hwmPE = finalValPE;
-            }
-            data.pe.push(finalValPE);
-            data.indexVal.push(prev.indexVal * (1 + idxRet));
-            data.bonds.push(prev.bonds * (1 + yr.bonds/100));
-        });
-
-        const years = subset.length;
-        const stats = {
-            total: getStats(startCap, data.total[data.total.length - 1], years),
-            credit: getStats(startCap, data.credit[data.credit.length - 1], years),
-            indexVal: getStats(startCap, data.indexVal[data.indexVal.length - 1], years),
-            pe: getStats(startCap, data.pe[data.pe.length - 1], years),
-            bonds: getStats(startCap, data.bonds[data.bonds.length - 1], years)
+        const data = { 
+            labels: [startYear], total: [startCap], credit: [creditVal], 
+            optionVal: [premiumSpxFp + premiumSpx], indexVal: [startCap],
+            bonds: [startCap], pe: [startCap]
         };
 
-        return { labels, data, stats };
+        for (let i = 1; i <= 10; i++) {
+            let currentYear = startYear + i;
+            let yrData = historicalData.find(d => d.year === currentYear);
+            if (!yrData) break; 
+
+            let rate = yrData.rate / 100;
+            let spxRet = yrData.spx / 100;
+            let bondRet = yrData.bonds / 100;
+            let peRet = yrData.pe / 100;
+
+            // 1. Credit Leg Compounding
+            let dynamicYield = rate + (CONSTANTS.CREDIT_SPREAD / 100);
+            creditVal = creditVal * (1 + dynamicYield);
+
+            // 2. Track Cumulative Returns
+            cumSpx = cumSpx * (1 + spxRet);
+            cumSpxOpt = cumSpxOpt * (1 + spxRet + CONSTANTS.OPT_DIV_CAPTURE); // 40bps Div Capture
+            cumSofr = cumSofr * (1 + rate);
+            
+            let spxfpRet = (cumSpxOpt / cumSofr) - 1; // Dragged Forward Return
+            let spxRetCum = cumSpxOpt - 1;            // Pure Spot Return + Div Capture
+
+            // 3. Option Valuation (Simulating Delta Expansion & Time Decay)
+            let timeElapsed = i / 10.0; 
+            let baseDelta = CONSTANTS.START_DELTA + ((1.0 - CONSTANTS.START_DELTA) * timeElapsed);
+            
+            // --- SPXFP Leg ---
+            let intrinsicFp = Math.max(0, notionalSpxFp * spxfpRet);
+            let currDeltaFp = spxfpRet < 0 ? CONSTANTS.START_DELTA * (1.0 - timeElapsed) : baseDelta;
+            let mtmFp = (notionalSpxFp * currDeltaFp * spxfpRet) + (premiumSpxFp * (1.0 - timeElapsed));
+            let optValFp = (i === 10) ? intrinsicFp : Math.max(0, mtmFp);
+
+            // --- SPX Leg ---
+            let intrinsicSpx = Math.max(0, notionalSpx * spxRetCum);
+            let currDeltaSpx = spxRetCum < 0 ? CONSTANTS.START_DELTA * (1.0 - timeElapsed) : baseDelta;
+            let mtmSpx = (notionalSpx * currDeltaSpx * spxRetCum) + (premiumSpx * (1.0 - timeElapsed));
+            let optValSpx = (i === 10) ? intrinsicSpx : Math.max(0, mtmSpx);
+
+            let optionValTotal = optValFp + optValSpx;
+            let grossTotal = creditVal + optionValTotal;
+
+            // 4. Annual Management Fee (Actually dragged from capital)
+            let postMgmt = grossTotal * (1 - mgmtFeePct);
+            
+            // 5. Accrued Performance Fee (Shadow NAV for visualization)
+            let reportedNAV = postMgmt;
+            if (postMgmt > startCap) {
+                let accruedCarry = (postMgmt - startCap) * perfFeePct;
+                reportedNAV = postMgmt - accruedCarry;
+            }
+
+            // Apply mgmt fee drag to credit balance for compounding the next year
+            creditVal = creditVal * (1 - mgmtFeePct);
+
+            // Benchmarks (ETF includes 1.1% div and 0.03% fee)
+            let prevIdx = data.indexVal[i - 1];
+            data.indexVal.push(prevIdx * (1 + spxRet + 0.011 - 0.0003));
+
+            let prevBond = data.bonds[i - 1];
+            data.bonds.push(prevBond * (1 + bondRet));
+
+            let prevPe = data.pe[i - 1];
+            let peGross = prevPe * (1 + peRet) * (1 - 0.015); // 1.5% PE Mgmt Fee
+            let finalPe = peGross;
+            // PE usually calculates carry at the end of the fund life above initial
+            if (i === 10 && peGross > startCap) {
+                finalPe = peGross - ((peGross - startCap) * 0.20); 
+            }
+            data.pe.push(finalPe);
+
+            // Save Data
+            data.labels.push(currentYear);
+            data.total.push(reportedNAV); // Chart uses the smoothed shadow NAV
+            data.credit.push(creditVal);
+            data.optionVal.push(optionValTotal);
+        }
+
+        const years = 10;
+        const stats = {
+            total: getStats(startCap, data.total[years], years),
+            credit: getStats(startCap, data.credit[years], years),
+            indexVal: getStats(startCap, data.indexVal[years], years),
+            bonds: getStats(startCap, data.bonds[years], years),
+            pe: getStats(startCap, data.pe[years], years)
+        };
+
+        return { labels: data.labels, data, stats };
     }
 
     function getStats(start, end, years) {
-        if (years === 0) return { irr: 0, cumul: 0 };
+        if (!end || years === 0) return { irr: 0, cumul: 0 };
         return { irr: ((Math.pow(end / start, 1 / years) - 1) * 100), cumul: ((end - start) / start) * 100 };
     }
 
-    function updateChart() {
-        const range = slider.noUiSlider.get().map(Number);
-        const res = calculate(Math.round(range[0]), Math.round(range[1]));
-        const ctx = document.getElementById('mainChart').getContext('2d');
-        const curLev = parseFloat(document.getElementById('leverageInput').value);
-        const underlying = document.getElementById('underlyingAsset').value;
-        const idxName = underlying === 'SPX' ? 'S&P 500' : 'MSCI World';
-        
-        document.getElementById('effPart').value = `~${(curLev * CONSTANTS.START_DELTA).toFixed(2)}x (Delta Adj)`;
-        document.getElementById('toggleIdxLabel').textContent = idxName;
+    function triggerUpdate() {
+        updateOptionPricing();
+        const startYear = Math.round(slider.noUiSlider.get());
+        const endYear = startYear + 10;
+        document.getElementById('sliderLabel').innerText = `Select 10-Year Block: ${startYear} to ${endYear}`;
 
+        const res = calculate10YearBlock(startYear);
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        const idxName = 'S&P 500 ETF';
+        
         const datasets = [];
         const lbl = (name, s) => `${name} (Cumul: ${s.cumul.toFixed(0)}%)`;
 
         datasets.push({ label: lbl('GSI Total', res.stats.total), data: res.data.total, borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 3, tension: 0.2, fill: true, order: 1 });
 
         if (document.getElementById('showCredit').checked) datasets.push({ label: lbl('Credit Floor', res.stats.credit), data: res.data.credit, borderColor: '#10b981', borderWidth: 2, borderDash: [5,5], pointRadius: 0, order: 2, fill: false });
-        if (document.getElementById('showOption').checked) datasets.push({ label: 'Option Strategy Net P&L ($)', data: res.data.optionVal, borderColor: '#f97316', borderWidth: 2, pointRadius: 0, order: 3, fill: false });
+        if (document.getElementById('showOption').checked) datasets.push({ label: 'Option Value (Est.)', data: res.data.optionVal, borderColor: '#f97316', borderWidth: 2, pointRadius: 0, order: 3, fill: false });
         if (document.getElementById('showIndex').checked) datasets.push({ label: lbl(idxName, res.stats.indexVal), data: res.data.indexVal, borderColor: '#64748b', borderWidth: 2, pointRadius: 0, order: 4 });
         if (document.getElementById('showPE').checked) datasets.push({ label: lbl('Private Equity (Net)', res.stats.pe), data: res.data.pe, borderColor: '#8b5cf6', borderWidth: 2, pointRadius: 0, order: 5 });
         if (document.getElementById('showBonds').checked) datasets.push({ label: lbl('Bonds', res.stats.bonds), data: res.data.bonds, borderColor: '#f43f5e', borderWidth: 2, pointRadius: 0, order: 6 });
@@ -343,13 +400,13 @@
     }
 
     function updateMetrics(res, idxName) {
-        const end = res.data.total.length - 1;
+        const end = 10;
         const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits:0 }).format;
         const mkBox = (lbl, val, stats, className) => `<div class="metric-box ${className}"><div class="metric-label">${lbl}</div><div class="metric-val">${fmt(val)}</div><div class="metric-stats"><span class="stat-badge">IRR: ${stats.irr.toFixed(1)}%</span><span class="stat-badge">Cum: ${stats.cumul.toFixed(0)}%</span></div></div>`;
 
         let html = mkBox('GSI Total (Net)', res.data.total[end], res.stats.total, 'blue');
         if (document.getElementById('showCredit').checked) html += mkBox('Credit Floor', res.data.credit[end], res.stats.credit, 'green');
-        if (document.getElementById('showOption').checked) html += `<div class="metric-box orange"><div class="metric-label">Option P&L</div><div class="metric-val">${fmt(res.data.optionVal[end])}</div><div style="font-size:0.75rem; color:#94a3b8; margin-top:8px;">(Net vs Floor)</div></div>`;
+        if (document.getElementById('showOption').checked) html += `<div class="metric-box orange"><div class="metric-label">Final Option Value</div><div class="metric-val">${fmt(res.data.optionVal[end])}</div><div style="font-size:0.75rem; color:#94a3b8; margin-top:8px;">(Intrinsic at Year 10)</div></div>`;
         if (document.getElementById('showIndex').checked) html += mkBox(idxName, res.data.indexVal[end], res.stats.indexVal, 'gray');
         if (document.getElementById('showPE').checked) html += mkBox('Private Equity (Net)', res.data.pe[end], res.stats.pe, 'purple');
         if (document.getElementById('showBonds').checked) html += mkBox('Bonds', res.data.bonds[end], res.stats.bonds, 'red');
@@ -359,16 +416,19 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         slider = document.getElementById('dateSlider');
-        noUiSlider.create(slider, { start: [1974, 2024], connect: true, range: { 'min': 1974, 'max': 2024 }, step: 1, tooltips: [true, true], format: { to: v => Math.round(v), from: v => Number(v) } });
-        slider.noUiSlider.on('update', updateChart);
+        noUiSlider.create(slider, { start: 1998, connect: [true, false], range: { 'min': 1974, 'max': 2014 }, step: 1, tooltips: true, format: { to: v => Math.round(v), from: v => Number(v) } });
+        slider.noUiSlider.on('update', triggerUpdate);
         
-        ['startCap', 'mgmtFee', 'perfFee', 'leverageInput', 'underlyingAsset'].forEach(id => {
-            document.getElementById(id).addEventListener(id === 'perfFee' || id === 'underlyingAsset' ? 'change' : 'input', updateChart);
+        ['startCap', 'mgmtFee', 'perfFee', 'allocSlider', 'ivSlider'].forEach(id => {
+            document.getElementById(id).addEventListener('input', triggerUpdate);
         });
 
         ['showCredit', 'showOption', 'showIndex', 'showPE', 'showBonds'].forEach(id => {
-            document.getElementById(id).addEventListener('change', updateChart);
+            document.getElementById(id).addEventListener('change', triggerUpdate);
         });
+        
+        // Initial setup
+        triggerUpdate();
     });
 </script>
 </body>

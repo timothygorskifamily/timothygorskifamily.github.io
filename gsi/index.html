@@ -6,7 +6,7 @@
 <title>GSI Credit & Option Strategy Explorer</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="gsi-calculator.js"></script>
 <style>
 /* Chosen Palette: Warm Institutional Financial */
@@ -61,6 +61,11 @@
         transition: background .15s ease-in-out;
     }
     .range-slider::-webkit-slider-thumb:hover { background: #1E3A8A; }
+    
+    /* Toggle & Metric Styling */
+    .toggle-pill { cursor: pointer; transition: all 0.2s ease; }
+    .toggle-active { background: #1E40AF; color: white; box-shadow: 0 4px 6px rgba(30, 64, 175, 0.2); }
+    .badge-institutional { background: #EFF6FF; color: #1E40AF; border: 1px solid #DBEAFE; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
 </style>
 </head>
 <body class="text-gray-800">
@@ -84,8 +89,10 @@
 </nav>
 
 <section class="relative bg-white overflow-hidden">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-        <div class="text-center max-w-3xl mx-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 text-center">
+        <div class="inline-flex items-center space-x-2 mb-6">
+        </div>
+        <div class="max-w-3xl mx-auto">
             <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
                 Credit Yield + <br> <span class="text-blue-800">Levered Equity Upside</span>
             </h1>
@@ -129,7 +136,7 @@
                     <div class="text-blue-800 text-4xl mb-4 font-bold">&#8669;</div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">The Catalyst: Option Funding</h3>
                     <p class="text-gray-600 text-sm">
-                        Instead of paying out the yield (9-11%), we use it to purchase <strong>10-Year OTC Call Options</strong> on a core index (SPX or MSCI).
+                        Instead of paying out the yield (9-11%), we use it to purchase <strong>10-Year OTC Call Options</strong> on the S&P 500.
                     </p>
                 </div>
 
@@ -158,52 +165,79 @@
                 <div>
                     <h2 class="text-3xl font-bold text-gray-900 mb-2">Long-Term Return Simulator</h2>
                     <p class="text-gray-600">
-                        Adjust the <strong>annual</strong> market conditions to see how the GSI Strategy's structure compounds over a <strong>10-Year Horizon (Net of Fees)</strong>.
+                        Adjust the <strong>annual</strong> market conditions to see how the GSI Strategy's structure compounds over a <strong>10-Year Horizon</strong>.
                     </p>
                 </div>
 
                 <div class="glass-panel p-6 bg-gray-50">
+                    <div class="flex justify-between items-center mb-2">
+                        <label id="idx-slider-label" class="text-sm font-bold text-gray-700">Annual SPX Price Return</label>
+                        <button onclick="applyStressTest()" class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-black hover:bg-red-700 hover:text-white transition uppercase">Stress Test</button>
+                    </div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-red-600 font-semibold">-20%</span>
+                        <span id="spx-return-display" class="text-2xl font-bold text-blue-800">8%</span>
+                        <span class="text-green-600 font-semibold">+20%</span>
+                    </div>
+                    <input type="range" id="spx-return" min="-20" max="20" value="8" step="1" class="range-slider mb-6">
+                    
                     <div class="mb-6">
-                        <label for="underlying-select" class="block text-sm font-bold text-gray-700 mb-2">Underlying Index</label>
-                        <select id="underlying-select" class="w-full p-2 border border-gray-300 rounded-md font-medium text-gray-800 bg-white">
-                            <option value="SPX" selected>S&P 500 (SPX)</option>
-                            <option value="MSCI">MSCI World</option>
-                        </select>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Implied Volatility (10Y)</label>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs text-gray-500">10%</span>
+                            <span id="iv-display" class="text-lg font-bold text-blue-800">22%</span>
+                            <span class="text-xs text-gray-500">40%</span>
+                        </div>
+                        <input type="range" id="iv-slider" min="10" max="40" value="22" step="1" class="range-slider">
                     </div>
 
-                    <label id="idx-slider-label" for="spx-return" class="block text-sm font-bold text-gray-700 mb-2">
-                        Hypothetical Annual S&P 500 Price Return
-                    </label>
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-red-600 font-semibold">-50%</span>
-                        <span id="spx-return-display" class="text-2xl font-bold text-blue-800">8%</span>
-                        <span class="text-green-600 font-semibold">+50%</span>
+                    <div class="mb-6 p-4 bg-blue-900 rounded-lg text-white">
+                        <label class="block text-xs font-bold uppercase tracking-widest opacity-80 mb-3">Option Allocation Blend</label>
+                        <input type="range" id="blend-slider" min="0" max="100" value="0" class="range-slider accent-amber-500">
+                        <div class="flex justify-between text-[10px] mt-2 font-bold uppercase">
+                            <span class="text-amber-400">100% SPX</span>
+                            <span>50/50 Blend</span>
+                            <span>100% SPXFP</span>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-blue-800 text-[11px] space-y-1">
+                            <div class="flex justify-between opacity-80"><span>SPXFP Multiplier:</span><span id="lev-fp-label">1.30x</span></div>
+                            <div class="flex justify-between opacity-80"><span>SPX Multiplier:</span><span id="lev-std-label">0.79x</span></div>
+                            <div class="flex justify-between font-bold text-amber-400"><span>Total Leverage:</span><span id="lev-total-label">2.09x</span></div>
+                        </div>
                     </div>
-                    <input type="range" id="spx-return" min="-50" max="50" value="8" step="1" class="range-slider mb-6">
-                    
+
                     <div class="space-y-4">
                         <div class="flex justify-between items-center text-sm border-b border-gray-200 pb-2">
                             <span id="idx-div-label" class="text-gray-600">S&P 500 Dividend Yield</span>
                             <span id="idx-div-display" class="font-mono font-bold text-gray-900">1.1%</span>
                         </div>
+                        
+                        <div class="mb-2">
+                            <div class="flex justify-between items-center text-sm mb-1">
+                                <span class="text-gray-600">Assumed SOFR</span>
+                                <span id="sofr-display" class="font-mono font-bold text-gray-900">3.5%</span>
+                            </div>
+                            <input type="range" id="sofr-slider" min="0" max="10" value="3.5" step="0.1" class="range-slider">
+                        </div>
+
                         <div class="flex justify-between items-center text-sm border-b border-gray-200 pb-2">
-                            <span class="text-gray-600">Credit Yield</span>
-                            <span class="font-mono font-bold text-gray-900">9.5%</span>
+                            <span class="text-gray-600">Credit Yield (SOFR + 6%)</span>
+                            <span id="credit-yield-display" class="font-mono font-bold text-gray-900">9.5%</span>
                         </div>
                         
                         <div class="bg-gray-100 p-3 rounded text-xs space-y-1">
-                            <div class="font-bold text-gray-700 mb-1">Fee Structure Applied (Net):</div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-500">GSI Mgmt Fee</span>
-                                <span>0.50%</span>
+                            <div class="font-bold text-gray-700 mb-1">Fee Structure & Assumptions:</div>
+                            <div class="flex justify-between text-gray-600">
+                                <span>GSI Mgmt Fee (Annual)</span>
+                                <span class="text-gray-900 font-bold">0.50%</span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-500">GSI Performance Fee (Carry)</span>
-                                <span>20.0%</span>
+                            <div class="flex justify-between text-gray-600">
+                                <span>GSI Perf. Fee (Accrued)</span>
+                                <span class="text-gray-900 font-bold">20.0%</span>
                             </div>
-                            <div class="flex justify-between border-t border-gray-200 pt-1 mt-1">
-                                <span class="text-gray-500">Benchmark ETF Fee</span>
-                                <span>0.03%</span>
+                            <div class="flex justify-between text-gray-600 border-t border-gray-200 pt-1 mt-1">
+                                <span>Option Div. Capture</span>
+                                <span class="text-emerald-700 font-bold">0.40%</span>
                             </div>
                         </div>
                     </div>
@@ -212,13 +246,12 @@
 
             <div class="lg:col-span-8">
                 <div class="flex flex-col h-full">
-                    <div class="mb-4 flex flex-wrap gap-4 justify-between items-end">
-                        <h3 class="text-lg font-semibold text-gray-800">Projected 10-Year Net Return (Cumulative)</h3>
-                        <div class="flex flex-wrap gap-2 text-xs sm:text-sm">
-                            <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-gray-400 mr-1"></span> <span id="legend-idx">S&P 500</span> ETF</div>
-                            <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-purple-600 mr-1"></span> Private Equity (Net)</div>
-                            <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-emerald-600 mr-1"></span> Bonds</div>
-                            <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-blue-800 mr-1"></span> GSI (Net)</div>
+                    <div class="mb-4 flex flex-wrap gap-4 justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-800">10-Year Growth Projection (Cumulative)</h3>
+                        
+                        <div class="flex items-center space-x-1 p-1 bg-gray-100 rounded-lg">
+                            <button id="toggleGross" onclick="setFeeMode('gross')" class="toggle-pill px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest">Gross</button>
+                            <button id="toggleNet" onclick="setFeeMode('net')" class="toggle-pill px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest toggle-active">Net (Fees)</button>
                         </div>
                     </div>
                     
@@ -226,37 +259,47 @@
                         <canvas id="simulationChart"></canvas>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 mt-6">
-                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 text-center">
-                            <div class="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-2">GSI Strategy (Net)</div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <div id="gsi-irr-display" class="text-2xl font-bold text-blue-900">--%</div>
-                                    <div class="text-[10px] text-blue-600">Net IRR</div>
-                                </div>
-                                <div>
-                                    <div id="gsi-moic-display" class="text-2xl font-bold text-blue-900">--x</div>
-                                    <div class="text-[10px] text-blue-600">Multiple</div>
-                                </div>
+                    <div class="grid grid-cols-3 gap-4 mt-6">
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 text-center flex flex-col justify-center">
+                            <div class="text-[10px] font-bold text-blue-800 uppercase tracking-wide mb-2">GSI Strategy</div>
+                            <div class="flex justify-center items-baseline space-x-1">
+                                <span id="gsi-irr-display" class="text-2xl font-black text-blue-900">--%</span>
+                                <span class="text-[10px] font-bold text-blue-600">IRR</span>
                             </div>
                         </div>
                         
-                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center">
-                            <div id="idx-metric-label" class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">S&P 500 ETF</div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <div id="spx-irr-display" class="text-2xl font-bold text-gray-800">--%</div>
-                                    <div class="text-[10px] text-gray-500">Net IRR</div>
-                                </div>
-                                <div>
-                                    <div id="spx-moic-display" class="text-2xl font-bold text-gray-800">--x</div>
-                                    <div class="text-[10px] text-gray-500">Multiple</div>
-                                </div>
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center flex flex-col justify-center">
+                            <div id="idx-metric-label" class="text-[10px] font-bold text-gray-600 uppercase tracking-wide mb-2">S&P 500 ETF</div>
+                            <div class="flex justify-center items-baseline space-x-1">
+                                <span id="spx-irr-display" class="text-2xl font-black text-gray-800">--%</span>
+                                <span class="text-[10px] font-bold text-gray-500">IRR</span>
                             </div>
+                        </div>
+
+                        <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200 text-center flex flex-col justify-center">
+                            <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-wide mb-2">Strategy Outperf.</div>
+                            <div class="flex justify-center items-baseline space-x-1">
+                                <span id="alpha-display" class="text-2xl font-black text-emerald-900">+$0</span>
+                            </div>
+                            <div class="text-[10px] font-bold text-emerald-600 mt-1">per $100k invested</div>
                         </div>
                     </div>
 
-                    <div id="simulation-commentary" class="mt-4 p-4 rounded-lg bg-gray-50 border-l-4 border-blue-800 text-sm">
+                    <div class="mt-6 bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-50 border-b border-gray-200 text-xs uppercase font-bold text-gray-500">
+                                <tr>
+                                    <th class="px-5 py-3">Strategy / Asset ($100k Initial)</th>
+                                    <th class="px-5 py-3 text-right">Net IRR</th>
+                                    <th class="px-5 py-3 text-right">Final 10Y Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="comparison-table-body" class="divide-y divide-gray-100 font-semibold text-gray-700">
+                                </tbody>
+                        </table>
+                    </div>
+
+                    <div id="simulation-commentary" class="mt-6 p-4 rounded-lg bg-gray-50 border-l-4 border-blue-800 text-sm leading-relaxed">
                     </div>
                 </div>
             </div>
@@ -300,17 +343,34 @@
     }
 
     // --- Simulator Wiring ---
+    let feeMode = 'net';
+    function setFeeMode(mode) {
+        feeMode = mode;
+        document.getElementById('toggleGross').classList.toggle('toggle-active', mode === 'gross');
+        document.getElementById('toggleNet').classList.toggle('toggle-active', mode === 'net');
+        updateSimulation();
+    }
+
+    function applyStressTest() {
+        document.getElementById('spx-return').value = -10;
+        updateSimulation();
+    }
+
     const ctxSim = document.getElementById('simulationChart').getContext('2d');
     const spxSlider = document.getElementById('spx-return');
-    const underlyingSelect = document.getElementById('underlying-select');
+    const ivSlider = document.getElementById('iv-slider');
+    const blendSlider = document.getElementById('blend-slider');
+    const sofrSlider = document.getElementById('sofr-slider');
+    
     const spxDisplay = document.getElementById('spx-return-display');
+    const ivDisplay = document.getElementById('iv-display');
     const commentaryBox = document.getElementById('simulation-commentary');
     
     // Metrics
     const irrDisplay = document.getElementById('gsi-irr-display');
-    const moicDisplay = document.getElementById('gsi-moic-display');
+    const alphaDisplay = document.getElementById('alpha-display');
     const spxIrrDisplay = document.getElementById('spx-irr-display');
-    const spxMoicDisplay = document.getElementById('spx-moic-display');
+    const tableBody = document.getElementById('comparison-table-body');
 
     // Chart Initialization
     const simChart = new Chart(ctxSim, {
@@ -319,9 +379,7 @@
             labels: [], 
             datasets: [
                 { label: 'Index ETF', borderColor: '#9CA3AF', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, data: [] },
-                { label: 'Private Equity (Net)', borderColor: '#9333EA', borderWidth: 1, pointRadius: 0, data: [] },
-                { label: 'Agg Bonds', borderColor: '#059669', borderWidth: 1, pointRadius: 0, data: [] },
-                { label: 'GSI (Net)', borderColor: '#1E40AF', borderWidth: 3, pointRadius: 0, data: [] }
+                { label: 'GSI Strategy', borderColor: '#1E40AF', borderWidth: 3, pointRadius: 0, data: [] }
             ]
         },
         options: {
@@ -334,7 +392,7 @@
                         label: function(context) {
                             let val = context.raw;
                             let growth = ((val / 100) - 1) * 100; 
-                            return context.dataset.label + ': ' + growth.toFixed(1) + '%';
+                            return context.dataset.label + ': ' + growth.toFixed(1) + '% cumulative';
                         }
                     }
                 },
@@ -347,69 +405,129 @@
         }
     });
 
-    function updateSimulation() {
-        const underlying = underlyingSelect.value;
-        const idxName = underlying === 'SPX' ? 'S&P 500' : 'MSCI World';
-        const divYield = underlying === 'SPX' ? 1.1 : 1.8; // MSCI generally carries a slightly higher dividend yield.
+    const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
-        // Update UI Labels dynamically based on underlying selection
-        document.getElementById('idx-slider-label').textContent = `Hypothetical Annual ${idxName} Price Return`;
-        document.getElementById('idx-div-label').textContent = `${idxName} Dividend Yield`;
-        document.getElementById('idx-div-display').textContent = `${divYield}%`;
-        document.getElementById('idx-metric-label').textContent = `${idxName} ETF`;
-        document.getElementById('legend-idx').textContent = idxName;
-        simChart.data.datasets[0].label = `${idxName} ETF`;
+    function updateSimulation() {
+        const divYield = 1.1; 
+        const sofrAssumed = parseFloat(sofrSlider.value);
+        const creditYield = sofrAssumed + 6.0;
+
+        // Update UI Labels
+        document.getElementById('sofr-display').textContent = sofrAssumed.toFixed(1) + "%";
+        document.getElementById('credit-yield-display').textContent = creditYield.toFixed(1) + "%";
 
         const spxPriceReturn = parseFloat(spxSlider.value);
         spxDisplay.textContent = (spxPriceReturn > 0 ? "+" : "") + spxPriceReturn + "%";
+        
+        const ivValue = parseFloat(ivSlider.value);
+        ivDisplay.textContent = ivValue + "%";
 
-        const inputs = {
-            investment: 100,
-            currentSpot: 580, 
-            spxPriceReturn: spxPriceReturn, 
-            spxDivYield: divYield, 
-            creditYield: 9.5,
-            volatility: underlying === 'SPX' ? 22.0 : 19.5, // Slight vol tweak for MSCI
-            mgmtFee: 0.5,
-            carryFee: 20.0,
-            riskFreeRate: 4.0,
-            years: 10
-        };
+        const blendValue = parseFloat(blendSlider.value);
 
-        const data = calculateGSIProjection(inputs);
+        // Pricing Math
+        const costFp = 0.20 * (ivValue / 22);
+        const costStd = 0.33 * (ivValue / 22);
+        const budgetFp = 0.52 * (blendValue / 100);
+        const budgetStd = 0.52 * ((100 - blendValue) / 100);
 
-        // Update Chart
-        simChart.data.labels = data.series.labels;
-        simChart.data.datasets[0].data = data.series.spx;
-        simChart.data.datasets[1].data = data.series.pe;
-        simChart.data.datasets[2].data = data.series.bonds;
-        simChart.data.datasets[3].data = data.series.gsi;
+        const levFp = budgetFp / costFp;
+        const levStd = budgetStd / costStd;
+        const totalLev = levFp + levStd;
+
+        document.getElementById('lev-fp-label').innerText = levFp.toFixed(2) + "x";
+        document.getElementById('lev-std-label').innerText = levStd.toFixed(2) + "x";
+        document.getElementById('lev-total-label').innerText = totalLev.toFixed(2) + "x";
+
+        // Logic for Chart Data
+        let labels = ['Start'], gsiData = [100], spxData = [100];
+        
+        // Option 40bps Dividend Capture 
+        const spxOptGrowthFactor = 1 + ((spxPriceReturn + 0.4) / 100);
+        const sofrGrowthFactor = 1 + (sofrAssumed / 100);
+        
+        // ETF Total Growth
+        const totalIdxGrowthFactor = 1 + ((spxPriceReturn + divYield - 0.03) / 100);
+
+        const mFee = feeMode === 'net' ? 0.005 : 0;
+        const cFee = feeMode === 'net' ? 0.20 : 0;
+
+        for(let i=1; i<=10; i++) {
+            labels.push("Year " + i);
+            spxData.push(100 * Math.pow(totalIdxGrowthFactor, i));
+
+            // Component values for GSI using updated option growth
+            const cumSpxOpt = Math.pow(spxOptGrowthFactor, i);
+            const cumSofr = Math.pow(sofrGrowthFactor, i);
+            const spxfpRet = (cumSpxOpt / cumSofr) - 1;
+            const spxRetCum = cumSpxOpt - 1;
+
+            const fpGain = Math.max(0, levFp * spxfpRet) * 100;
+            const stdGain = Math.max(0, levStd * spxRetCum) * 100;
+            const creditComp = 48 * Math.pow(1 + (creditYield/100), i);
+
+            const grossValue = creditComp + fpGain + stdGain + (52 * (10-i)/10);
+            
+            // Apply Fees using "Accrued Carry" (Shadow NAV) logic to smooth the chart
+            let workingValue = grossValue;
+            if (feeMode === 'net') {
+                // Apply 0.5% management fee drag
+                workingValue = workingValue * Math.pow(1 - mFee, i);
+                
+                let reportedNAV = workingValue;
+                // Accrue the 20% carry continuously on paper for charting purposes
+                if (workingValue > 100) {
+                    reportedNAV = 100 + ((workingValue - 100) * (1 - cFee)); 
+                }
+                gsiData.push(reportedNAV);
+            } else {
+                gsiData.push(workingValue);
+            }
+        }
+
+        simChart.data.labels = labels;
+        simChart.data.datasets[0].data = spxData;
+        simChart.data.datasets[1].data = gsiData;
         simChart.update();
 
-        // Update Metrics
-        irrDisplay.textContent = data.metrics.irr.toFixed(1) + "%";
-        moicDisplay.textContent = data.metrics.moic.toFixed(2) + "x";
-        spxIrrDisplay.textContent = data.metrics.spxIrr.toFixed(1) + "%";
-        spxMoicDisplay.textContent = data.metrics.spxMoic.toFixed(2) + "x";
-
-        // Update Commentary
-        const netTR = (spxPriceReturn + divYield - 0.03).toFixed(1);
-        let comment = "";
+        // Metrics
+        const finalGSI = gsiData[10];
+        const finalSPX = spxData[10];
         
-        if (spxPriceReturn >= 8) {
-            comment = `With ${idxName} generating a <strong>${netTR}% Total Return</strong> (Price ${spxPriceReturn}% + ${divYield}% Divs), the GSI Strategy's options capture the upside. The Credit Yield covers the premium, resulting in a <strong>${data.metrics.irr.toFixed(1)}% Net IRR</strong>.`;
-        } else if (spxPriceReturn > 0) {
-            comment = `In a moderate market (${netTR}% TR), the leverage is efficient. GSI outperforms Bonds and Equities with a <strong>${data.metrics.moic.toFixed(2)}x</strong> multiple.`;
-        } else {
-            comment = `In a downturn, the Credit Floor activates. While the ${idxName} drops to a ${netTR}% return, GSI protects capital, delivering a positive <strong>${data.metrics.irr.toFixed(1)}% IRR</strong> driven by the 9.5% credit yield.`;
+        const baseInvestment = 100000;
+        const multiplier = baseInvestment / 100;
+        
+        const gsiIrr = ((Math.pow(finalGSI/100, 0.1) - 1) * 100);
+        const spxIrr = ((Math.pow(finalSPX/100, 0.1) - 1) * 100);
+        const alpha = (finalGSI * multiplier) - (finalSPX * multiplier);
+
+        irrDisplay.textContent = gsiIrr.toFixed(1) + "%";
+        spxIrrDisplay.textContent = spxIrr.toFixed(1) + "%";
+        alphaDisplay.textContent = (alpha >= 0 ? "+" : "") + "$" + alpha.toFixed(0);
+
+        // Populate Summary Table (Focused on GSI vs SPX ETF)
+        tableBody.innerHTML = `
+            <tr class="bg-blue-50/50 hover:bg-blue-100/50 transition duration-150 border-l-4 border-blue-600">
+                <td class="px-5 py-4 font-black text-blue-900">GSI Strategy (${feeMode.toUpperCase()})</td>
+                <td class="px-5 py-4 text-right text-blue-800 font-bold">${gsiIrr.toFixed(1)}%</td>
+                <td class="px-5 py-4 text-right text-blue-800 font-black text-lg">${formatCurrency(finalGSI * multiplier)}</td>
+            </tr>
+            <tr class="hover:bg-gray-50 transition duration-150 border-l-4 border-gray-400">
+                <td class="px-5 py-4 font-bold text-gray-900">S&P 500 ETF (Net)</td>
+                <td class="px-5 py-4 text-right text-gray-700">${spxIrr.toFixed(1)}%</td>
+                <td class="px-5 py-4 text-right font-bold text-gray-800">${formatCurrency(finalSPX * multiplier)}</td>
+            </tr>
+        `;
+
+        // Commentary
+        let comment = `Analysis (${feeMode.toUpperCase()}): At **${totalLev.toFixed(2)}x** leverage, the strategy turns a $100k investment into **${formatCurrency(finalGSI * multiplier)}** over 10 years. While the ETF risks principal in down-cycles, your **${creditYield.toFixed(1)}% Credit Floor** protects capital.`;
+        if(blendValue > 20) {
+            comment += ` Note: The SPXFP leg faces an interest rate hurdle of **${((Math.pow(1 + sofrAssumed/100, 10)-1)*100).toFixed(1)}%** before contributing alpha.`;
         }
-        commentaryBox.innerHTML = `<p>${comment}</p>`;
+        commentaryBox.innerHTML = comment;
     }
 
-    spxSlider.addEventListener('input', updateSimulation);
-    underlyingSelect.addEventListener('change', updateSimulation);
-    
-    setTimeout(updateSimulation, 100);
+    [spxSlider, ivSlider, blendSlider, sofrSlider].forEach(el => el.addEventListener('input', updateSimulation));
+    window.onload = updateSimulation;
 </script>
 </body>
 </html>
