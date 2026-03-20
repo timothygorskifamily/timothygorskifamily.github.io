@@ -159,10 +159,6 @@
 
                 <div style="margin-top: 15px; text-align: center; padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center;">
                     <div>
-                        <span style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; font-weight: bold;">Option Div. Capture:</span>
-                        <span style="font-size: 1.0rem; font-weight: 800; color: #10b981; margin-left: 5px;">0.40%</span>
-                    </div>
-                    <div>
                         <span style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; font-weight: bold;">Total Leverage:</span>
                         <span id="totalLeverageDisplay" style="font-size: 1.2rem; font-weight: 800; color: var(--accent); margin-left: 10px;">1.58x</span>
                     </div>
@@ -199,7 +195,7 @@
 
     const historicalData = rawData;
 
-    const CONSTANTS = { CREDIT_SPREAD: 6.0, CREDIT_ALLOC: 0.48, TOTAL_OPT_BUDGET: 0.52, START_DELTA: 0.60, OPT_DIV_CAPTURE: 0.004 };
+    const CONSTANTS = { CREDIT_SPREAD: 6.0, CREDIT_ALLOC: 0.48, TOTAL_OPT_BUDGET: 0.52, START_DELTA: 0.60 };
 
     let myChart = null;
     let slider = null;
@@ -282,7 +278,7 @@
 
             // 2. Track Cumulative Returns
             cumSpx = cumSpx * (1 + spxRet);
-            cumSpxOpt = cumSpxOpt * (1 + spxRet + CONSTANTS.OPT_DIV_CAPTURE); // 40bps Div Capture
+            cumSpxOpt = cumSpxOpt * (1 + spxRet); 
             cumSofr = cumSofr * (1 + rate);
             
             let spxfpRet = (cumSpxOpt / cumSofr) - 1; // Dragged Forward Return
