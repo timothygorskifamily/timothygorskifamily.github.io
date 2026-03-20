@@ -235,10 +235,6 @@
                                 <span>GSI Perf. Fee (Accrued)</span>
                                 <span class="text-gray-900 font-bold">20.0%</span>
                             </div>
-                            <div class="flex justify-between text-gray-600 border-t border-gray-200 pt-1 mt-1">
-                                <span>Option Div. Capture</span>
-                                <span class="text-emerald-700 font-bold">0.40%</span>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -441,8 +437,7 @@
         // Logic for Chart Data
         let labels = ['Start'], gsiData = [100], spxData = [100];
         
-        // Option 40bps Dividend Capture 
-        const spxOptGrowthFactor = 1 + ((spxPriceReturn + 0.4) / 100);
+        const spxOptGrowthFactor = 1 + ((spxPriceReturn) / 100);
         const sofrGrowthFactor = 1 + (sofrAssumed / 100);
         
         // ETF Total Growth
