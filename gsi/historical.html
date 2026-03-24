@@ -303,8 +303,9 @@
             let optionValTotal = optValFp + optValSpx;
             let grossTotal = creditVal + optionValTotal;
 
-            // 4. Annual Management Fee (Actually dragged from capital)
-            let postMgmt = grossTotal * (1 - mgmtFeePct);
+            // 4. Annual Management Fee (Fixed on Committed Capital)
+            let mgmtFeeAmount = startCap * mgmtFeePct;
+            let postMgmt = grossTotal - mgmtFeeAmount;
             
             // 5. Accrued Performance Fee (Shadow NAV for visualization)
             let reportedNAV = postMgmt;
@@ -313,8 +314,8 @@
                 reportedNAV = postMgmt - accruedCarry;
             }
 
-            // Apply mgmt fee drag to credit balance for compounding the next year
-            creditVal = creditVal * (1 - mgmtFeePct);
+            // Apply mgmt fee deduction to credit balance for compounding the next year
+            creditVal = creditVal - mgmtFeeAmount;
 
             // Benchmarks (ETF includes 1.1% div and 0.03% fee)
             let prevIdx = data.indexVal[i - 1];
