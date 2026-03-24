@@ -465,8 +465,9 @@
             // Apply Fees using "Accrued Carry" (Shadow NAV) logic to smooth the chart
             let workingValue = grossValue;
             if (feeMode === 'net') {
-                // Apply 0.5% management fee drag
-                workingValue = workingValue * Math.pow(1 - mFee, i);
+                // Apply fixed management fee on initial commitment (100 base)
+                const mgmtFeeAmount = 100 * mFee * i;
+                workingValue = workingValue - mgmtFeeAmount;
                 
                 let reportedNAV = workingValue;
                 // Accrue the 20% carry continuously on paper for charting purposes
