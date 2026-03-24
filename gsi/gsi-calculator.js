@@ -113,23 +113,31 @@ function calculateGSIProjection(inputs) {
         
         const valIntrinsic = Math.max(0, S_fut_fp - weightedStrike) * uQuantityOpt;
 
-        const mgmtDrag = Math.pow(1 - mFee, t);
-        let finalCredit = valCreditGross * mgmtDrag;
-        let finalOpt = valOptGross * mgmtDrag;
-        let finalIntrinsic = valIntrinsic * mgmtDrag;
-
-        let finalPort = finalCredit + finalOpt;
+        // Apply flat mgmt fee based strictly on committed capital
+        const totalMgmtFee = investment * mFee * t;
+        
+        let finalCredit = valCreditGross;
+        let finalOpt = valOptGross;
+        let finalIntrinsic = valIntrinsic;
+        let finalPort = finalCredit + finalOpt - totalMgmtFee;
 
         // Apply Carry
         const profit = finalPort - investment;
         if (profit > 0) {
             const carryAmt = profit * cFee;
             finalPort -= carryAmt;
-            const creditShare = finalCredit / (finalCredit + finalOpt);
-            finalCredit -= (carryAmt * creditShare);
-            const optShare = 1 - creditShare;
-            finalOpt -= (carryAmt * optShare);
-            finalIntrinsic -= (carryAmt * optShare);
+            
+            // Proportionally shrink sub-components for visual charting
+            const shrinkRatio = finalPort / (finalCredit + finalOpt);
+            finalCredit *= shrinkRatio;
+            finalOpt *= shrinkRatio;
+            finalIntrinsic *= shrinkRatio;
+        } else if (finalPort > 0 && (finalCredit + finalOpt) > 0) {
+            // Adjust visual sub-components to account for flat management fee drag
+            const shrinkRatio = finalPort / (finalCredit + finalOpt);
+            finalCredit *= shrinkRatio;
+            finalOpt *= shrinkRatio;
+            finalIntrinsic *= shrinkRatio;
         }
 
         results.gsi.push(finalPort);
