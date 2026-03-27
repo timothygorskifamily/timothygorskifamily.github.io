@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GSI Theoretical Historical Strategy Analysis Prototype</title>
+    <title>GSI Theoretical Historical Strategy Analysis - 50Y Engine</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.css">
 
     <style>
@@ -20,10 +21,15 @@
         .nav-link { text-decoration: none; color: #4b5563; font-weight: 500; font-size: 0.95rem; }
         .nav-link.active { color: #1e40af; font-weight: 600; }
         .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--border); padding-bottom: 20px; margin-bottom: 25px; }
-        h1 { margin: 0; font-size: 1.8rem; color: var(--primary); }
+        h1 { margin: 0; font-size: 1.8rem; color: var(--primary); display: flex; align-items: center; gap: 15px;}
         .sub { font-size: 0.95rem; color: #64748b; margin-top: 5px; font-weight: 500; }
-        .badge { background: #f1f5f9; color: #64748b; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; }
+        .badge { background: #dbeafe; color: #1e40af; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; }
         
+        .upload-zone { border: 2px dashed #94a3b8; background: #f8fafc; padding: 40px; text-align: center; border-radius: 12px; margin-bottom: 25px; cursor: pointer; transition: all 0.2s; }
+        .upload-zone:hover { border-color: var(--accent); background: #eff6ff; }
+        .upload-btn { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 1rem; }
+        .hidden { display: none !important; }
+
         .formula-bar { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 25px; display: flex; justify-content: center; gap: 15px; }
         .controls-wrapper { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 25px; margin-bottom: 25px; }
         .controls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; margin-bottom: 20px; align-items: start; }
@@ -31,7 +37,6 @@
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--primary); }
         input[type="number"], select, input[type="text"] { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; box-sizing: border-box; background: #fff; color: var(--primary); }
-        input:disabled { background: #f1f5f9; color: #94a3b8; font-weight: bold; }
         
         .range-slider { -webkit-appearance: none; width: 100%; height: 8px; border-radius: 5px; background: #cbd5e1; outline: none; margin-top: 5px; }
         .range-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; }
@@ -42,10 +47,11 @@
         .chart-wrapper { position: relative; height: 500px; width: 100%; }
         
         #dateSlider { margin: 0 20px 40px 20px; height: 10px; }
+        #tableYearSlider { margin: 0 10px 10px 10px; height: 8px; }
         .noUi-connect { background: var(--accent); }
         .noUi-handle { cursor: grab; }
 
-        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
         .metric-box { padding: 15px; border-radius: 12px; background: #f1f5f9; border: 1px solid var(--border); text-align: center; }
         .metric-box.blue { border-top: 4px solid #2563eb; }
         .metric-box.green { border-top: 4px solid #10b981; }
@@ -57,299 +63,646 @@
         .metric-label { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-sub); }
         .metric-stats { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
         .stat-badge { font-size: 0.75rem; font-weight: 600; background: white; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; }
-        .disclaimer-section { font-size: 0.7rem; color: #94a3b8; margin-top: 50px; padding-top: 30px; border-top: 1px solid var(--border); line-height: 1.5; }
 
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
         .text-sm { font-size: 0.8rem; }
         .text-blue { color: #1e40af; font-weight: bold; }
+
+        .simulated-warning { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; font-size: 0.75rem; font-weight: bold; padding: 4px 8px; border-radius: 6px; margin-left: 10px; display: inline-block; vertical-align: middle; }
+        .sim-tag { background: #fef08a; color: #854d0e; padding: 2px 4px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; margin-left: 5px; }
+
+        .escrow-alert { display: none; font-size: 0.8rem; color: #b45309; background: #fffbeb; padding: 12px; border-radius: 8px; border: 1px solid #fde68a; margin-top: 10px; font-weight: 500; line-height: 1.4; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+
+        .jump-link { color: var(--accent); text-decoration: underline; cursor: pointer; font-weight: bold; }
+        .jump-link:hover { color: #1e40af; }
+        .blend-badge { font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 4px; display: inline-block; }
+        .blend-win { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .blend-loss { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+        .disclaimer-section { margin-top: 50px; padding: 40px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; color: #475569; font-size: 0.8rem; line-height: 1.6; }
+        .disclaimer-section h3 { color: #0f172a; font-size: 1.1rem; margin-top: 0; margin-bottom: 20px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;}
+        .disclaimer-list { padding-left: 20px; }
+        .disclaimer-list li { margin-bottom: 15px; }
+        .disclaimer-category { font-weight: 800; color: #1e293b; margin-top: 25px; margin-bottom: 10px; font-size: 0.9rem; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <nav class="nav-bar">
-        <a href="https://gorskifamilyoffice.com/gsi/index.html" class="logo-text">GSI<span class="logo-dot">.</span>Explorer</a>
+        <a href="#" class="logo-text">GSI<span class="logo-dot">.</span>Explorer</a>
         <div class="nav-links">
-            <a href="#" class="nav-link active">Historical Backtest</a>
-            <a href="https://gorskifamilyoffice.com/gsi/psa.html" class="nav-link">Projections (PSA)</a>
+            <a href="#" class="nav-link active">Historical Backtest (50-Year)</a>
         </div>
     </nav>
 
     <div class="header">
         <div>
-            <h1>Rolling 10-Year Strategy Analysis <span style="font-size:0.5em; background:#f1f5f9; padding:4px 8px; border-radius:4px;">Prototype</span></h1>
-            <div class="sub">Dynamic Option Allocation & Volatility Pricing (1974 - 2024)</div>
+            <h1>Rolling 10-Year Strategy Analysis <span class="badge">CSV DATA ENGINE ACTIVE</span></h1>
+            <div class="sub">Dynamic Principal Protected Pricing Engine (Monthly 120-Step Engine)</div>
         </div>
-        <div><span class="badge">10-Year Tranche Mode</span></div>
+        <div><span class="badge" style="background: #f1f5f9; color: #64748b;">Algorithmic Options Pricing</span></div>
     </div>
 
-    <div class="formula-bar">
-        <span>🔵 10-Year Total =</span>
-        <span>🟢 Credit Yield (SOFR + 6%)</span>
-        <span>+</span>
-        <span>🟠 Blended 10-Year Options (SPXFP + SPX)</span>
+    <div id="uploadContainer" class="upload-zone hidden">
+        <h2 style="margin: 0 0 10px 0; color: #0f172a;">Awaiting Market Data</h2>
+        <p style="color: #64748b; margin-bottom: 15px;">Please select the <strong>gsi_macro_data_50yr.csv</strong> file to begin.</p>
+        <p style="color: #94a3b8; font-size: 0.8rem;">(Auto-load failed due to browser 'file://' security restrictions)</p>
+        <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+        <button class="upload-btn" onclick="document.getElementById('csvFileInput').click()">Select CSV File</button>
+    </div>
+    
+    <div id="loadingMessage" style="text-align: center; padding: 50px; font-weight: bold; color: #64748b;">
+        Attempting to auto-load historical market data...
     </div>
 
-    <div class="controls-wrapper">
-        <div class="controls-grid">
-            <div>
-                <div class="section-title">Portfolio Settings</div>
-                <div class="input-group">
-                    <label>Initial Capital ($)</label>
-                    <input type="number" id="startCap" value="250000" step="10000">
-                </div>
-                <div class="input-group">
-                    <label>Underlying Asset</label>
-                    <div style="padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; background: #f1f5f9; color: var(--text-sub); font-weight: bold;">
-                        S&P 500 (SPX)
+    <div id="dashboardApp" class="hidden">
+        <div class="formula-bar">
+            <span>🟢 Day 1 Sized Floor + Floating SOFR Crediting</span>
+            <span>|</span>
+            <span>🟠 Option Budget = Remaining Capital</span>
+        </div>
+
+        <div class="controls-wrapper">
+            <div class="controls-grid">
+                <div>
+                    <div class="section-title">Portfolio Terms</div>
+                    <div class="input-group">
+                        <label>Initial Capital ($)</label>
+                        <input type="number" id="startCap" value="250000" step="10000">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Assumed Yield on Safe Assets (Sets Option Budget)</label>
+                        <select id="sizingSpread">
+                            <option value="0.045">4.5% (Conservative)</option>
+                            <option value="0.055" selected>5.5% (Standard)</option>
+                            <option value="0.075">7.5% (Aggressive)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Private Credit Bonus Yield (vs. Public Bonds)</label>
+                        <select id="bcredPremium">
+                            <option value="0.015">1.5% (Conservative)</option>
+                            <option value="0.025" selected>2.5% (Realistic)</option>
+                            <option value="0.035">3.5% (Historical Model Default)</option>
+                            <option value="0.045">4.5%</option>
+                            <option value="0.055">5.5% (Aggressive)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Management Fee</label>
+                        <input type="number" id="mgmtFee" value="0.5" step="0.1" min="0" max="5">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="input-group">
+                            <label>Annual MTM Carry</label>
+                            <select id="annCarry">
+                                <option value="0" selected>0%</option>
+                                <option value="0.10">10%</option>
+                                <option value="0.15">15%</option>
+                                <option value="0.20">20%</option>
+                                <option value="0.25">25%</option>
+                                <option value="0.30">30%</option>
+                                <option value="0.35">35%</option>
+                                <option value="0.40">40%</option>
+                                <option value="0.45">45%</option>
+                                <option value="0.50">50%</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Backend Carry</label>
+                            <select id="backendCarry">
+                                <option value="0">0%</option>
+                                <option value="0.10">10%</option>
+                                <option value="0.15">15%</option>
+                                <option value="0.20" selected>20%</option>
+                                <option value="0.25">25%</option>
+                                <option value="0.30">30%</option>
+                                <option value="0.35">35%</option>
+                                <option value="0.40">40%</option>
+                                <option value="0.45">45%</option>
+                                <option value="0.50">50%</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="escrowNote" class="escrow-alert">
+                        <strong>🟠 Escrow Compounding Active:</strong> 50% of Annual MTM Carry is set aside as a reserve. This reserve continues to earn the fund's credit yield. If the fund underperforms the SPY at Year 10, the bucket is refunded to the LP to bridge the gap.
                     </div>
                 </div>
-                <div class="input-group">
-                    <label>Management Fee (Annual %)</label>
-                    <input type="number" id="mgmtFee" value="0.5" step="0.1" min="0" max="5">
-                </div>
-                <div class="input-group">
-                    <label>Performance Fee (Accrued Carry)</label>
-                    <select id="perfFee">
-                        <option value="0">0%</option>
-                        <option value="0.07">7%</option>
-                        <option value="0.10">10%</option>
-                        <option value="0.20" selected>20%</option>
-                    </select>
+
+                <div style="grid-column: span 2; background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div class="section-title">Day-1 Quantitative Pricing</div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; text-align: center;">
+                        <div>
+                            <div style="font-size: 0.70rem; color: #64748b; font-weight: bold; text-transform: uppercase;">10Y Risk-Free Rate</div>
+                            <div id="historicalRateDisplay" class="text-blue" style="font-size: 1.1rem; font-weight: bold;">--%</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.70rem; color: #64748b; font-weight: bold; text-transform: uppercase;">Initial Credit Spread</div>
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <div id="initialSpreadDisplay" class="text-blue" style="font-size: 1.1rem; font-weight: bold; color: #7c3aed;">--%</div>
+                                <span id="bcredDataBadge" style="background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; display: none;">ACTUAL</span>
+                                <span id="bcredProxyBadge" style="background: #f59e0b; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; display: none;">PROXY</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.70rem; color: #64748b; font-weight: bold; text-transform: uppercase;">10Y Est. Volatility</div>
+                            <div id="historicalVolDisplay" class="text-blue" style="font-size: 1.1rem; font-weight: bold;">--%</div>
+                        </div>
+                        <div style="border-left: 1px solid #e2e8f0; padding-left: 10px;">
+                            <div style="font-size: 0.70rem; color: #10b981; font-weight: bold; text-transform: uppercase;">Initial Floor Size</div>
+                            <div id="floorSizeDisplay" style="font-size: 1.1rem; font-weight: 800; color: #10b981;">--%</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.70rem; color: #f97316; font-weight: bold; text-transform: uppercase;">Option Budget</div>
+                            <div id="optionBudgetDisplay" style="font-size: 1.1rem; font-weight: 800; color: #f97316;">--%</div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <div class="flex-between">
+                            <label>Option Allocation Blend</label>
+                            <span id="allocDisplay" class="text-blue text-sm">100% SPX / 0% SPXFP</span>
+                        </div>
+                        <input type="range" id="allocSlider" min="0" max="100" value="50" class="range-slider">
+                        <div class="flex-between text-sm" style="color: #64748b; margin-top: 5px;">
+                            <span>100% SPX</span>
+                            <span>100% SPXFP</span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; background: #f8fafc; padding: 15px; border-radius: 8px;">
+                        <div>
+                            <label style="font-size: 0.75rem; color: #64748b; font-weight: bold; text-transform: uppercase;">SPX (Spot Option)</label>
+                            <div style="font-size: 0.85rem; margin-top: 5px;">Cost per 1.0x Exposure: <span id="costSpxDisplay" class="text-blue">--%</span></div>
+                            <div style="font-size: 0.85rem;">Leverage Multiplier: <span id="levSpxDisplay" style="font-weight: bold; color: #0f172a;">--x</span></div>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; color: #64748b; font-weight: bold; text-transform: uppercase;">SPXFP (Forward Option)</label>
+                            <div style="font-size: 0.85rem; margin-top: 5px;">Cost per 1.0x Exposure: <span id="costSpxFpDisplay" class="text-blue">--%</span></div>
+                            <div style="font-size: 0.85rem;">Leverage Multiplier: <span id="levSpxFpDisplay" style="font-weight: bold; color: #0f172a;">--x</span></div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 15px; text-align: center; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                        <span style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; font-weight: bold;">Blended Equity Leverage:</span>
+                        <span id="totalLeverageDisplay" style="font-size: 1.3rem; font-weight: 800; color: var(--accent); margin-left: 10px;">--x</span>
+                    </div>
                 </div>
             </div>
 
-            <div style="grid-column: span 2; background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
-                <div class="section-title">Option Engine (52% Total Budget)</div>
-                
-                <div class="input-group">
-                    <div class="flex-between">
-                        <label>Option Allocation Blend</label>
-                        <span id="allocDisplay" class="text-blue text-sm">0% SPXFP / 100% SPX</span>
-                    </div>
-                    <input type="range" id="allocSlider" min="0" max="100" value="0" class="range-slider">
-                    <div class="flex-between text-sm" style="color: #64748b; margin-top: 5px;">
-                        <span>100% SPX</span>
-                        <span>100% SPXFP</span>
-                    </div>
-                </div>
-
-                <div class="input-group" style="margin-top: 20px;">
-                    <div class="flex-between">
-                        <label>Implied Volatility (IV)</label>
-                        <span id="ivDisplay" class="text-blue text-sm">22%</span>
-                    </div>
-                    <input type="range" id="ivSlider" min="10" max="40" value="22" step="1" class="range-slider">
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; background: #f8fafc; padding: 15px; border-radius: 8px;">
-                    <div>
-                        <label style="font-size: 0.75rem; color: #64748b; font-weight: bold; text-transform: uppercase;">SPXFP (Forward Price)</label>
-                        <div style="font-size: 0.85rem; margin-top: 5px;">Cost: <span id="costSpxFpDisplay" class="text-blue">20.0%</span></div>
-                        <div style="font-size: 0.85rem;">Budget: <span id="budgetSpxFpDisplay">0.0%</span></div>
-                        <div style="font-size: 0.85rem;">Leverage: <span id="levSpxFpDisplay" style="font-weight: bold; color: #0f172a;">0.00x</span></div>
-                    </div>
-                    <div>
-                        <label style="font-size: 0.75rem; color: #64748b; font-weight: bold; text-transform: uppercase;">SPX</label>
-                        <div style="font-size: 0.85rem; margin-top: 5px;">Cost: <span id="costSpxDisplay" class="text-blue">33.0%</span></div>
-                        <div style="font-size: 0.85rem;">Budget: <span id="budgetSpxDisplay">52.0%</span></div>
-                        <div style="font-size: 0.85rem;">Leverage: <span id="levSpxDisplay" style="font-weight: bold; color: #0f172a;">1.58x</span></div>
-                    </div>
-                </div>
-
-                <div style="margin-top: 15px; text-align: center; padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-around; align-items: center;">
-                    <div>
-                        <span style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; font-weight: bold;">Total Leverage:</span>
-                        <span id="totalLeverageDisplay" style="font-size: 1.2rem; font-weight: 800; color: var(--accent); margin-left: 10px;">1.58x</span>
-                    </div>
-                </div>
+            <div class="toggles">
+                <strong style="font-size:0.9rem; align-self:center; margin-right:10px;">Display Layers:</strong>
+                <label class="checkbox-lbl"><input type="checkbox" id="showCredit"> Credit Floor</label>
+                <label class="checkbox-lbl"><input type="checkbox" id="showOption"> Option P&L</label>
+                <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;"><input type="checkbox" id="showIndex" checked> S&P 500 (SPY)</label>
+                <label class="checkbox-lbl"><input type="checkbox" id="showPE"> Private Equity</label>
+                <label class="checkbox-lbl"><input type="checkbox" id="showBonds"> Bonds</label>
+                <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;"><input type="checkbox" id="showSofr"> SOFR (Right Axis)</label>
+                <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;">
+                    <input type="checkbox" id="alphaOnlyToggle"> Alpha-Only Carry
+                </label>
             </div>
         </div>
 
-        <div class="toggles">
-            <strong style="font-size:0.9rem; align-self:center; margin-right:10px;">Display Layers:</strong>
-            <label class="checkbox-lbl"><input type="checkbox" id="showCredit" checked> Credit Floor</label>
-            <label class="checkbox-lbl"><input type="checkbox" id="showOption" checked> Option P&L</label>
-            <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;"><input type="checkbox" id="showIndex" checked> S&P 500</label>
-            <label class="checkbox-lbl"><input type="checkbox" id="showPE"> Private Equity</label>
-            <label class="checkbox-lbl"><input type="checkbox" id="showBonds"> Bonds</label>
+        <div class="chart-section" id="chartSection">
+            <div class="chart-wrapper"><canvas id="mainChart"></canvas></div>
+            <div style="padding: 0 20px; margin-top:20px;">
+                <div style="text-align:center; margin-bottom:25px;">
+                    <span id="sliderLabel" style="font-size:0.85rem; font-weight:bold; color:var(--text-sub);">Select 10-Year Block Entry Date</span>
+                    <span id="simulatedWarning" class="simulated-warning" style="display: none;">⚠️ VINTAGE CONTAINS SIMULATED MACRO DATA</span>
+                </div>
+                <div id="dateSlider"></div>
+            </div>
         </div>
+        
+        <div style="margin-top: 30px; overflow-x: auto; background: white; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+                <thead>
+                    <tr style="background: #f8fafc; border-bottom: 1px solid var(--border);">
+                        <th style="padding: 12px;">Date</th>
+                        <th style="padding: 12px;">SOFR (%)</th>
+                        <th style="padding: 12px;">Credit Spread (%)</th>
+                        <th style="padding: 12px;">Total Yield (%)</th>
+                        <th style="padding: 12px;">Floor Value ($)</th>
+                        <th style="padding: 12px;">Option MTM ($)</th>
+                        <th style="padding: 12px;">Total NAV ($)</th>
+                        <th style="padding: 12px; border-left: 2px solid #e2e8f0;">SPY NAV ($)</th>
+                        <th style="padding: 12px;">vs SPY ($ / % Over Benchmark)</th>
+                    </tr>
+                </thead>
+                <tbody id="yearlyTableBody"></tbody>
+            </table>
+        </div>
+        
+        <div class="metrics" id="metricsContainer"></div>
+
+        <div class="controls-wrapper" style="padding: 20px; margin-top: 40px; margin-bottom: 20px; border-left: 4px solid var(--accent);">
+            <div class="flex-between" style="margin-bottom: 15px;">
+                <div>
+                    <div class="section-title" style="margin: 0; border: none; font-size: 0.9rem; color: var(--primary);">Filter Summary Tables by Vintage Year</div>
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Adjust the range below to view strategy performance across specific economic periods.</div>
+                </div>
+                <div id="tableYearRangeDisplay" style="font-size: 1.2rem; font-weight: 800; color: var(--accent);">1990 - 2024</div>
+            </div>
+            <div id="tableYearSlider" style="margin: 10px 10px 0 10px;"></div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px;">
+            <div class="section-title" style="margin-bottom: 0; border: none; font-size: 0.9rem; color: #9f1239;">Principal Protection Stress Tests (When S&P 500 Lost Money)</div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.95rem; font-weight: bold; color: #9f1239;">
+                    Win Rate vs SPY (Down Markets): <span id="downMarketWinRateDisplay" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
+                    <span id="downMarketWinBlendDisplay" style="margin-left: 5px;"></span>
+                </div>
+                <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 5px;">Avg GSI Return: <span id="avgProtectionReturnDisplay" style="color: #10b981; font-weight: bold; font-size: 1.1rem;">--%</span></div>
+                <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 2px;">Avg SPY Loss: <span id="avgSpyLossDisplay" style="color: #f43f5e; font-weight: bold; font-size: 1.1rem;">--%</span></div>
+                <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 2px;">Avg Outperformance: <span id="avgDownOutperformanceDisplay" style="color: #10b981; font-weight: bold; font-size: 1.1rem;">--%</span></div>
+            </div>
+        </div>
+        <div style="overflow-x: auto; background: white; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px; max-height: 300px; overflow-y: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+                <thead style="position: sticky; top: 0; background: #fff1f2; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    <tr>
+                        <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">Vintage Start Date</th>
+                        <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">SPY 10-Year Return</th>
+                        <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">GSI 10-Year Return</th>
+                        <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">GSI Final NAV</th>
+                        <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">SPY Final NAV</th>
+                        <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">Relative Outperformance</th>
+                    </tr>
+                </thead>
+                <tbody id="protectionTableBody"></tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; margin-bottom: 15px;">
+            <div class="section-title" style="margin-bottom: 0; border: none; font-size: 0.9rem;">Historical Summary of All Monthly Rolling Vintages</div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.95rem; font-weight: bold; color: #64748b;">
+                    Overall Win Rate vs SPY: <span id="winRateDisplay" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
+                    <span id="winBlendDisplay" style="margin-left: 5px;"></span>
+                </div>
+                <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 5px;">Avg Gain (When Winning): <span id="avgWinPctDisplay" style="color: #10b981; font-weight: bold; font-size: 1.1rem;">--%</span></div>
+                <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 2px;">Avg Loss (When Underperforming): <span id="avgLossPctDisplay" style="color: #f43f5e; font-weight: bold; font-size: 1.1rem;">--%</span></div>
+                <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 2px;">Avg Outperformance: <span id="avgOverallOutperformanceDisplay" style="color: #10b981; font-weight: bold; font-size: 1.1rem;">--%</span></div>
+            </div>
+        </div>
+        <div style="overflow-x: auto; background: white; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px; max-height: 400px; overflow-y: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+                <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    <tr>
+                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Vintage Start Date</th>
+                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Initial Capital</th>
+                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Final Fund NAV ($)</th>
+                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Final SPY NAV ($)</th>
+                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Relative Outperformance vs SPY</th>
+                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Result vs SPY</th>
+                    </tr>
+                </thead>
+                <tbody id="masterTableBody"></tbody>
+            </table>
+        </div>
+
     </div>
 
-    <div class="chart-section">
-        <div class="chart-wrapper"><canvas id="mainChart"></canvas></div>
-        <div style="padding: 0 20px; margin-top:20px;">
-            <p id="sliderLabel" style="text-align:center; font-size:0.85rem; font-weight:bold; color:var(--text-sub); margin-bottom:25px;">Select 10-Year Block: 1998 to 2008</p>
-            <div id="dateSlider"></div>
-        </div>
+    <div id="disclaimerSection" class="disclaimer-section hidden">
+        <h3>Data Sources & Methodological Disclaimers</h3>
+        <p><strong>PROTOTYPE ONLY:</strong> This dynamic charting tool is a theoretical backtesting prototype designed exclusively for institutional modeling and discussion. It does not represent an actual fund, offering, or past performance of any real-world asset. All outputs are simulated based on historical indices, proxy assumptions, and mathematical models.</p>
+        
+        <div class="disclaimer-category">Data Sources & Benchmark Proxies</div>
+        <ul class="disclaimer-list">
+            <li><strong>S&P 500 Data (SPY):</strong> Equity returns are modeled using the S&P 500 Total Return Index (inclusive of perfectly reinvested dividends), proxied via SPY ETF data or interpolated historical index data prior to ETF inception. It assumes zero tax friction on dividend reinvestment.</li>
+            <li><strong>Risk-Free Rates & Short Rates:</strong> The 10-Year Treasury Constant Maturity rate (via St. Louis Fed / FRED) is used to calculate the option budget and forward pricing. The Secured Overnight Financing Rate (SOFR) is used as the base floating crediting rate. For historical periods before SOFR's publication (2018), 3-Month US Treasury Bill yields or Federal Funds rates are used as backward-calculated proxies.</li>
+            <li><strong>Private Credit Spreads:</strong> Because granular, standardized private credit data does not exist spanning 50 years, the engine utilizes the ICE BofA US High Yield Index Option-Adjusted Spread (OAS) as a base. It applies a dynamic, user-defined "Illiquidity/Complexity Premium" (e.g., 2.5% to 3.5%) to proxy direct lending returns. It also assumes volatility dampening compared to public high yield, capturing only 40% of extreme public spread blowouts.</li>
+            <li><strong>Private Equity Benchmark (PE):</strong> Private Equity returns are modeled using a static historical array intended to proxy average annual US Buyout fund performance (e.g., Cambridge Associates US Private Equity Index equivalents). PE data is inherently subject to appraisal smoothing, survivorship bias, and reporting lags. The model mathematically applies a strict "1.5 and 20" fee structure (1.5% annual management fee deducted monthly, 20% performance carry on profits over principal at Year 10) to simulate net-to-LP returns.</li>
+            <li><strong>Core Bonds Benchmark:</strong> Bond benchmark returns are modeled using a static historical array proxying the Bloomberg US Aggregate Bond Index (or similar core aggregate indices). The model assumes a pure buy-and-hold total return with perfectly reinvested coupon payments and assumes 0% management fees or transaction costs for the bond benchmark.</li>
+            <li><strong>Volatility Data (VIX):</strong> Options are priced using historical implied volatility, proxied by the CBOE Volatility Index (VIX) where available. For periods predating the inception of the VIX (pre-1990), historical realized volatility metrics and simulated flat-vol proxies are used to estimate pricing parameters.</li>
+        </ul>
+
+        <div class="disclaimer-category">Structural & Mathematical Assumptions</div>
+        <ul class="disclaimer-list">
+            <li><strong>Options Pricing Mechanics:</strong> Option allocations and Mark-to-Market (MTM) values are calculated continuously using the Black-Scholes European Call model. This model intrinsically assumes log-normal price distributions, constant volatility, a constant risk-free rate within the pricing step, and the inability to exercise the option before the 10-year maturity date. </li>
+            <li><strong>Zero Trading Friction:</strong> The model assumes zero transaction costs. It does not account for slippage, bid-ask spreads, broker commissions, or the lack of liquidity that often plagues 10-year OTC derivatives. It assumes you can buy the exact calculated fractional amount of exposure at perfectly efficient mid-market prices.</li>
+            <li><strong>Liquidity and Deployment Constraints:</strong> The model operates on the theoretical assumption of 100% Day-1 liquidity. It assumes all capital is perfectly deployed into options and the credit floor exactly at the start of the 120-month vintage. It completely ignores capital call mechanics, ramp-up periods, J-curves, lock-ups, or cash drag typical of real-world private market alternative funds.</li>
+            <li><strong>Fee Accounting and Escrow Compounding:</strong> When Annual MTM Carry is enabled, the model employs strict "Source-Based Accounting." Performance fees are immediately subtracted from the interest-bearing credit floor principal to prevent "ghost interest." If the escrow feature is active, siphoned fees are tracked in a separate reserve that assumes perfect reinvestment and compounds continuously at the exact private credit yield, with zero un-invested cash drag.</li>
+            <li><strong>Default Risk & Credit Losses:</strong> The modeled private credit yields are assumed to be "Net of Defaults." It assumes either zero defaults, or that the portfolio is so perfectly diversified and structured that the modeled spread fully absorbs and accounts for any underlying loan losses. A real-world concentration of defaults would severely impact the principal protection floor.</li>
+            <li><strong>Tax and Regulatory Constraints:</strong> All returns shown are strictly Gross of Investor-Level Taxes. The complex carry structures, high-water marks, options taxation rules (e.g., Section 1256 contracts), and escrow clawbacks do not account for partnership tax accounting, phantom income, or specific regulatory hurdles that would apply to a live structured product.</li>
+            <li><strong>Simulated Macro Scenarios:</strong> Vintages explicitly marked with the "[SIM]" tag indicate that historical gaps in specific macro data feeds have been patched using mathematical simulations, interpolated backward curves, or historical averages. These do not represent real-world events.</li>
+        </ul>
+        <p style="margin-top: 30px; font-size: 0.85rem; font-weight: 500; color: #0f172a; text-align: center;"><em>Past performance, simulated or actual, is no guarantee of future results. Market conditions during future stress events may differ materially from historical backtests, resulting in partial or complete loss of capital.</em></p>
     </div>
 
-    <div class="metrics" id="metricsContainer"></div>
 </div>
 
 <script>
-    // --- Data Processing (1974-2024) ---
-    const rawData = [
-        { year: 1974, rate: 10.5, spx: -26.47, bonds: 5.0, pe: -20.5 }, { year: 1975, rate: 5.8, spx: 37.20, bonds: 7.0, pe: 45.0 }, { year: 1976, rate: 5.0, spx: 23.84, bonds: 15.0, pe: 35.0 }, { year: 1977, rate: 5.5, spx: -7.18, bonds: 3.0, pe: -2.0 }, { year: 1978, rate: 7.9, spx: 6.56, bonds: 1.0, pe: 12.0 }, { year: 1979, rate: 11.2, spx: 18.44, bonds: 2.0, pe: 25.0 }, { year: 1980, rate: 13.3, spx: 32.50, bonds: 3.0, pe: 40.0 }, { year: 1981, rate: 16.4, spx: -4.92, bonds: 6.0, pe: -5.0 }, { year: 1982, rate: 12.2, spx: 21.55, bonds: 32.0, pe: 28.0 }, { year: 1983, rate: 9.1, spx: 22.56, bonds: 8.0, pe: 25.0 }, { year: 1984, rate: 10.2, spx: 6.27, bonds: 15.0, pe: 10.0 }, { year: 1985, rate: 8.1, spx: 31.73, bonds: 22.0, pe: 35.0 }, { year: 1986, rate: 6.8, spx: 18.67, bonds: 15.0, pe: 20.0 }, { year: 1987, rate: 6.6, spx: 5.25, bonds: 2.0, pe: 8.0 }, { year: 1988, rate: 7.5, spx: 16.61, bonds: 7.0, pe: 22.0 }, { year: 1989, rate: 9.2, spx: 31.69, bonds: 14.0, pe: 25.0 }, { year: 1990, rate: 8.1, spx: -3.10, bonds: 8.0, pe: -5.0 }, { year: 1991, rate: 5.7, spx: 30.47, bonds: 16.0, pe: 35.0 }, { year: 1992, rate: 3.5, spx: 7.62, bonds: 7.0, pe: 15.0 }, { year: 1993, rate: 3.0, spx: 10.08, bonds: 9.0, pe: 18.0 }, { year: 1994, rate: 4.2, spx: 1.32, bonds: -2.0, pe: 5.0 }, { year: 1995, rate: 5.8, spx: 37.58, bonds: 18.0, pe: 40.0 }, { year: 1996, rate: 5.3, spx: 22.96, bonds: 3.0, pe: 28.0 }, { year: 1997, rate: 5.5, spx: 33.36, bonds: 9.0, pe: 32.0 }, { year: 1998, rate: 5.3, spx: 28.58, bonds: 8.0, pe: 25.0 }, { year: 1999, rate: 5.0, spx: 21.04, bonds: -0.8, pe: 45.0 }, { year: 2000, rate: 6.2, spx: -9.10, bonds: 11.0, pe: -5.0 }, { year: 2001, rate: 3.8, spx: -11.89, bonds: 8.0, pe: -12.0 }, { year: 2002, rate: 1.6, spx: -22.10, bonds: 10.0, pe: -15.0 }, { year: 2003, rate: 1.1, spx: 28.68, bonds: 4.0, pe: 30.0 }, { year: 2004, rate: 1.3, spx: 10.88, bonds: 4.3, pe: 15.2 }, { year: 2005, rate: 3.2, spx: 4.91, bonds: 2.4, pe: 12.5 }, { year: 2006, rate: 4.9, spx: 15.79, bonds: 4.3, pe: 18.4 }, { year: 2007, rate: 5.0, spx: 5.49, bonds: 6.9, pe: 15.3 }, { year: 2008, rate: 1.9, spx: -37.0, bonds: 5.2, pe: -22.0 }, { year: 2009, rate: 0.1, spx: 26.46, bonds: 5.9, pe: 14.5 }, { year: 2010, rate: 0.1, spx: 15.06, bonds: 6.5, pe: 18.2 }, { year: 2011, rate: 0.1, spx: 2.11, bonds: 7.8, pe: 8.4 }, { year: 2012, rate: 0.1, spx: 16.00, bonds: 4.2, pe: 14.3 }, { year: 2013, rate: 0.1, spx: 32.39, bonds: -2.0, pe: 21.5 }, { year: 2014, rate: 0.1, spx: 13.69, bonds: 5.9, pe: 12.8 }, { year: 2015, rate: 0.1, spx: 1.38, bonds: 0.5, pe: 9.1 }, { year: 2016, rate: 0.4, spx: 11.96, bonds: 2.6, pe: 13.5 }, { year: 2017, rate: 1.0, spx: 21.83, bonds: 3.5, pe: 19.8 }, { year: 2018, rate: 1.8, spx: -4.38, bonds: 0.0, pe: 6.5 }, { year: 2019, rate: 2.1, spx: 31.49, bonds: 8.7, pe: 18.7 }, { year: 2020, rate: 0.3, spx: 18.40, bonds: 7.5, pe: 24.5 }, { year: 2021, rate: 0.05, spx: 28.71, bonds: -1.5, pe: 32.6 }, { year: 2022, rate: 1.6, spx: -18.11, bonds: -13.0, pe: -4.5 }, { year: 2023, rate: 5.0, spx: 26.29, bonds: 5.5, pe: 8.5 }, { year: 2024, rate: 5.3, spx: 25.00, bonds: 1.8, pe: 9.0 }
-    ];
+    // --- Black-Scholes Math Engine ---
+    function normCdf(x) {
+        var t = 1 / (1 + 0.2316419 * Math.abs(x));
+        var d = 0.3989423 * Math.exp(-x * x / 2);
+        var p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+        return x > 0 ? 1 - p : p;
+    }
 
-    const historicalData = rawData;
+    function bsCall(S, K, T, r, sigma, q) {
+        if (T <= 0) return Math.max(0, S - K);
+        var d1 = (Math.log(S / K) + (r - q + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T));
+        var d2 = d1 - sigma * Math.sqrt(T);
+        return S * Math.exp(-q * T) * normCdf(d1) - K * Math.exp(-r * T) * normCdf(d2);
+    }
 
-    const CONSTANTS = { CREDIT_SPREAD: 6.0, CREDIT_ALLOC: 0.48, TOTAL_OPT_BUDGET: 0.52, START_DELTA: 0.60 };
+    // Retained Legacy Proxies
+    const bondsArr = [5.0, 7.0, 15.0, 3.0, 1.0, 2.0, 3.0, 6.0, 32.0, 8.0, 15.0, 22.0, 15.0, 2.0, 7.0, 14.0, 8.0, 16.0, 7.0, 9.0, -2.0, 18.0, 3.0, 9.0, 8.0, -0.8, 11.0, 8.0, 10.0, 4.0, 4.3, 2.4, 4.3, 6.9, 5.2, 5.9, 6.5, 7.8, 4.2, -2.0, 5.9, 0.5, 2.6, 3.5, 0.0, 8.7, 7.5, -1.5, -13.0, 5.5, 1.8];
+    const peArr = [-20.5, 45.0, 35.0, -2.0, 12.0, 25.0, 40.0, -5.0, 28.0, 25.0, 10.0, 35.0, 20.0, 8.0, 22.0, 25.0, -5.0, 35.0, 15.0, 18.0, 5.0, 40.0, 28.0, 32.0, 25.0, 45.0, -5.0, -12.0, -15.0, 30.0, 15.2, 12.5, 18.4, 15.3, -22.0, 14.5, 18.2, 8.4, 14.3, 21.5, 12.8, 9.1, 13.5, 19.8, 6.5, 18.7, 24.5, 32.6, -4.5, 8.5, 9.0];
 
+    // --- Core Data Architecture ---
+    let monthlyData = [];
+    let validStartIndices = [];
     let myChart = null;
     let slider = null;
+    let tableSlider = null;
+
+    // --- CSV PARSING ENGINE ---
+    function processCSVData(results) {
+        monthlyData = [];
+        let currentPe = 100.0;
+        let currentBond = 100.0;
+
+        for (let i = 0; i < results.data.length; i++) {
+            let row = results.data[i];
+            if (!row.Date) continue;
+            
+            let year = parseInt(row.Date.split(' ')[1]); 
+            let spxPrice = row.SPX_Price;
+            let spxMonthlyRet = 0;
+            if (i > 0) {
+                spxMonthlyRet = (spxPrice / results.data[i-1].SPX_Price) - 1;
+            }
+
+            let peAnnualRet = 0.08;
+            let bondAnnualRet = 0.05;
+            let arrIdx = year - 1974;
+            if (arrIdx >= 0 && arrIdx < peArr.length) {
+                peAnnualRet = peArr[arrIdx] / 100;
+                bondAnnualRet = bondsArr[arrIdx] / 100;
+            }
+            
+            let peMonthlyRet = Math.pow(Math.max(0.01, 1 + peAnnualRet), 1/12) - 1;
+            let bondMonthlyRet = Math.pow(Math.max(0.01, 1 + bondAnnualRet), 1/12) - 1;
+            
+            currentPe *= (1 + peMonthlyRet);
+            currentBond *= (1 + bondMonthlyRet);
+
+            let actualBcredSpread = null;
+            if (row.BCRED_Spread !== undefined && row.BCRED_Spread !== null && row.BCRED_Spread !== "") {
+                actualBcredSpread = parseFloat(row.BCRED_Spread);
+            }
+            
+            let isSimulated = false;
+            if (row.Is_Simulated !== undefined && (row.Is_Simulated === 'TRUE' || row.Is_Simulated === true)) {
+                isSimulated = true;
+            }
+
+            monthlyData.push({
+                year: year,
+                label: row.Date,
+                r10: row.R10_Yield, 
+                rs: row.Short_Rate, 
+                vol: row.VIX, 
+                spread: row.HY_Spread, 
+                bcredSpread: actualBcredSpread,
+                isSimulated: isSimulated,
+                div: 1.5, 
+                spxMonthlyRet: spxMonthlyRet,
+                peMonthlyRet: peMonthlyRet,
+                bondMonthlyRet: bondMonthlyRet,
+                spxPrice: spxPrice,
+                pePrice: currentPe,
+                bondPrice: currentBond
+            });
+        }
+
+        validStartIndices = [];
+        for(let i=0; i <= monthlyData.length - 121; i++) {
+            validStartIndices.push(i);
+        }
+
+        if (validStartIndices.length === 0) {
+            alert("Not enough data! CSV must contain at least 120 months.");
+            return;
+        }
+
+        document.getElementById('uploadContainer').classList.add('hidden');
+        document.getElementById('loadingMessage').classList.add('hidden');
+        document.getElementById('dashboardApp').classList.remove('hidden');
+        document.getElementById('disclaimerSection').classList.remove('hidden');
+        
+        initDashboard();
+    }
+
+    // Auto-Load Attempt on Page Load
+    window.addEventListener('DOMContentLoaded', () => {
+        fetch('gsi_macro_data_50yr.csv')
+            .then(response => {
+                if (!response.ok) throw new Error("File not found locally or blocked by CORS.");
+                return response.text();
+            })
+            .then(csvText => {
+                Papa.parse(csvText, { header: true, dynamicTyping: true, skipEmptyLines: true, complete: processCSVData });
+            })
+            .catch(err => {
+                console.log("Auto-load failed (expected if opened directly via file://). Showing manual upload button.", err);
+                document.getElementById('loadingMessage').classList.add('hidden');
+                document.getElementById('uploadContainer').classList.remove('hidden');
+            });
+    });
+
+    // Manual Upload Fallback
+    document.getElementById('csvFileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        Papa.parse(file, { header: true, dynamicTyping: true, skipEmptyLines: true, complete: processCSVData });
+    });
+
+    function jumpToVintage(idx) {
+        slider.noUiSlider.set(idx);
+        document.getElementById('chartSection').scrollIntoView({ behavior: 'smooth' });
+    }
 
     // --- Dynamic Pricing Engine ---
-    function updateOptionPricing() {
-        const iv = parseFloat(document.getElementById('ivSlider').value);
+    function getOptionPricing(startIndex) {
+        const bcredPremium = parseFloat(document.getElementById('bcredPremium').value);
+        const md = monthlyData[startIndex];
+        const mgmtFeePct = parseFloat(document.getElementById('mgmtFee').value) / 100;
+        const r10 = md.r10 / 100;
+        const q = md.div / 100;
+        const vol = md.vol / 100;
+
+        const costSpx = bsCall(100.0, 100.0, 10.0, r10, vol, q) / 100;
+        const K_fwd = 100.0 * Math.exp((r10 - q) * 10.0);
+        const costSpxFp = bsCall(100.0, K_fwd, 10.0, r10, vol, q) / 100;
+
+        const sizingSpread = parseFloat(document.getElementById('sizingSpread').value); 
+        const y = r10 + sizingSpread;
+        let pv_principal = 1.0 / Math.pow(1.0 + y, 10);
+        let pv_fees = 0.0;
+        for(let t=1; t<=10; t++) {
+            pv_fees += mgmtFeePct / Math.pow(1.0 + y, t);
+        }
+        
+        const initialFloorPct = pv_principal + pv_fees;
+        const optBudgetPct = 1.0 - initialFloorPct;
+
         const allocSpxFp = parseFloat(document.getElementById('allocSlider').value);
         const allocSpx = 100 - allocSpxFp;
 
-        document.getElementById('ivDisplay').innerText = iv + "%";
-        document.getElementById('allocDisplay').innerText = `${allocSpxFp}% SPXFP / ${allocSpx}% SPX`;
+        const budgetSpxFp = optBudgetPct * (allocSpxFp / 100);
+        const budgetSpx = optBudgetPct * (allocSpx / 100);
 
-        // Linear scaling: Baseline is 20% (SPXFP) and 33% (SPX) at 22% IV
-        const costSpxFp = 0.20 * (iv / 22);
-        const costSpx = 0.33 * (iv / 22);
-
-        // Budget split
-        const budgetSpxFp = CONSTANTS.TOTAL_OPT_BUDGET * (allocSpxFp / 100);
-        const budgetSpx = CONSTANTS.TOTAL_OPT_BUDGET * (allocSpx / 100);
-
-        // Resulting Leverage
         const levSpxFp = budgetSpxFp > 0 ? (budgetSpxFp / costSpxFp) : 0;
         const levSpx = budgetSpx > 0 ? (budgetSpx / costSpx) : 0;
         const totalLev = levSpxFp + levSpx;
 
-        // Update UI
-        document.getElementById('costSpxFpDisplay').innerText = (costSpxFp * 100).toFixed(1) + "%";
-        document.getElementById('costSpxDisplay').innerText = (costSpx * 100).toFixed(1) + "%";
-        
-        document.getElementById('budgetSpxFpDisplay').innerText = (budgetSpxFp * 100).toFixed(1) + "%";
-        document.getElementById('budgetSpxDisplay').innerText = (budgetSpx * 100).toFixed(1) + "%";
-        
-        document.getElementById('levSpxFpDisplay').innerText = levSpxFp.toFixed(2) + "x";
-        document.getElementById('levSpxDisplay').innerText = levSpx.toFixed(2) + "x";
-        document.getElementById('totalLeverageDisplay').innerText = totalLev.toFixed(2) + "x";
+        let displayedSpread;
+        let isActualBcred = false;
 
-        return { levSpxFp, levSpx, budgetSpxFp, budgetSpx };
+        if (md && md.bcredSpread !== null && md.bcredSpread !== undefined && md.bcredSpread !== "") {
+            displayedSpread = md.bcredSpread / 100;
+            isActualBcred = true;
+        } else {
+            let rawSpread = (md ? (md.spread / 100) : 0.045);
+            displayedSpread = rawSpread + bcredPremium;       
+        }
+
+        return { levSpxFp, levSpx, budgetSpxFp, budgetSpx, initialFloorPct, costSpx, costSpxFp, displayedSpread, vol, r10, totalLev, allocSpx, allocSpxFp, isActualBcred };
     }
 
-    function calculate10YearBlock(startYear) {
+   function calculate10YearBlock(startIndex) {
+        const bcredPremium = parseFloat(document.getElementById('bcredPremium').value);
         const startCap = parseFloat(document.getElementById('startCap').value);
         const mgmtFeePct = parseFloat(document.getElementById('mgmtFee').value) / 100;
-        const perfFeePct = parseFloat(document.getElementById('perfFee').value);
+        const annCarryPct = parseFloat(document.getElementById('annCarry').value);
+        const backendCarryPct = parseFloat(document.getElementById('backendCarry').value);
 
-        // Get dynamically calculated leverages and budgets
-        const pricing = updateOptionPricing();
+        const pricing = getOptionPricing(startIndex);
+        const startMd = monthlyData[startIndex];
         
-        let creditVal = startCap * CONSTANTS.CREDIT_ALLOC;
+        let creditVal = startCap * pricing.initialFloorPct;
+        let cumSpxOpt = 1.0; 
+        let cumSpxIdx = 1.0; 
+        let hwm = 0.0; 
+        let escrowBucket = 0.0; 
         
-        let premiumSpxFp = startCap * pricing.budgetSpxFp;
-        let notionalSpxFp = startCap * pricing.levSpxFp;
-        
-        let premiumSpx = startCap * pricing.budgetSpx;
-        let notionalSpx = startCap * pricing.levSpx;
-
-        let cumSpx = 1.0;
-        let cumSpxOpt = 1.0;
-        let cumSofr = 1.0;
+        let hasSimulatedData = startMd.isSimulated;
 
         const data = { 
-            labels: [startYear], total: [startCap], credit: [creditVal], 
-            optionVal: [premiumSpxFp + premiumSpx], indexVal: [startCap],
-            bonds: [startCap], pe: [startCap]
+            labels: [startMd.label], total: [startCap], credit: [creditVal], 
+            optionVal: [startCap * (1 - pricing.initialFloorPct)], indexVal: [startCap],
+            bonds: [startCap], pe: [startCap], sofrRates: [startMd.rs],
+            spreads: [pricing.displayedSpread * 100]
         };
 
-        for (let i = 1; i <= 10; i++) {
-            let currentYear = startYear + i;
-            let yrData = historicalData.find(d => d.year === currentYear);
-            if (!yrData) break; 
+        const r10_start = startMd.r10 / 100;
+        const q_start = startMd.div / 100;
+        const K_fwd = 100.0 * Math.exp((r10_start - q_start) * 10);
 
-            let rate = yrData.rate / 100;
-            let spxRet = yrData.spx / 100;
-            let bondRet = yrData.bonds / 100;
-            let peRet = yrData.pe / 100;
-
-            // 1. Credit Leg Compounding
-            let dynamicYield = rate + (CONSTANTS.CREDIT_SPREAD / 100);
-            creditVal = creditVal * (1 + dynamicYield);
-
-            // 2. Track Cumulative Returns
-            cumSpx = cumSpx * (1 + spxRet);
-            cumSpxOpt = cumSpxOpt * (1 + spxRet); 
-            cumSofr = cumSofr * (1 + rate);
+        for (let m = 1; m <= 120; m++) {
+            let currIndex = startIndex + m;
+            if (currIndex >= monthlyData.length) break; 
+            let md = monthlyData[currIndex];
             
-            let spxfpRet = (cumSpxOpt / cumSofr) - 1; // Dragged Forward Return
-            let spxRetCum = cumSpxOpt - 1;            // Pure Spot Return + Div Capture
+            if (md.isSimulated === true) hasSimulatedData = true;
 
-            // 3. Option Valuation (Simulating Delta Expansion & Time Decay)
-            let timeElapsed = i / 10.0; 
-            let baseDelta = CONSTANTS.START_DELTA + ((1.0 - CONSTANTS.START_DELTA) * timeElapsed);
+            let currentSpread = (md.bcredSpread !== null && md.bcredSpread !== undefined && md.bcredSpread !== "") 
+                                ? md.bcredSpread / 100 
+                                : (md.spread / 100 + bcredPremium) + ((md.spread / 100 - 0.045) * 0.40);
+
+            let shortRate = md.rs / 100;
+            let dynamicYield = (shortRate + currentSpread) / 12;
             
-            // --- SPXFP Leg ---
-            let intrinsicFp = Math.max(0, notionalSpxFp * spxfpRet);
-            let currDeltaFp = spxfpRet < 0 ? CONSTANTS.START_DELTA * (1.0 - timeElapsed) : baseDelta;
-            let mtmFp = (notionalSpxFp * currDeltaFp * spxfpRet) + (premiumSpxFp * (1.0 - timeElapsed));
-            let optValFp = (i === 10) ? intrinsicFp : Math.max(0, mtmFp);
+            // Compound floor and escrow reserve
+            creditVal *= (1 + dynamicYield);
+            escrowBucket *= (1 + dynamicYield); 
 
-            // --- SPX Leg ---
-            let intrinsicSpx = Math.max(0, notionalSpx * spxRetCum);
-            let currDeltaSpx = spxRetCum < 0 ? CONSTANTS.START_DELTA * (1.0 - timeElapsed) : baseDelta;
-            let mtmSpx = (notionalSpx * currDeltaSpx * spxRetCum) + (premiumSpx * (1.0 - timeElapsed));
-            let optValSpx = (i === 10) ? intrinsicSpx : Math.max(0, mtmSpx);
-
-            let optionValTotal = optValFp + optValSpx;
-            let grossTotal = creditVal + optionValTotal;
-
-            // 4. Annual Management Fee (Fixed on Committed Capital)
-            let mgmtFeeAmount = startCap * mgmtFeePct;
-            let postMgmt = grossTotal - mgmtFeeAmount;
+            cumSpxOpt *= (1 + md.spxMonthlyRet); 
+            cumSpxIdx *= (1 + md.spxMonthlyRet + (md.div / 1200) - (0.0003 / 12)); 
             
-            // 5. Accrued Performance Fee (Shadow NAV for visualization)
-            let reportedNAV = postMgmt;
-            if (postMgmt > startCap) {
-                let accruedCarry = (postMgmt - startCap) * perfFeePct;
-                reportedNAV = postMgmt - accruedCarry;
+            let rem_T = 10.0 - (m / 12.0);
+            let curr_S = cumSpxOpt * 100.0;
+            let mtmSpx_unit = rem_T > 0 ? bsCall(curr_S, 100.0, rem_T, md.r10/100, md.vol/100, md.div/100) : Math.max(0.0, curr_S - 100.0);
+            let mtmFp_unit = rem_T > 0 ? bsCall(curr_S, K_fwd, rem_T, md.r10/100, md.vol/100, md.div/100) : Math.max(0.0, curr_S - K_fwd);
+            
+            let optValTotal = (pricing.levSpx * mtmSpx_unit + pricing.levSpxFp * mtmFp_unit) * (startCap / 100.0);
+            let monthlyFee = (startCap * mgmtFeePct) / 12;
+            
+            // Investor NAV excludes the Escrow reserve during the run
+            let reportedNAV = (creditVal + optValTotal) - monthlyFee;
+
+            if (m % 12 === 0 && annCarryPct > 0) {
+                const isAlphaOnly = document.getElementById('alphaOnlyToggle').checked;
+                let spyProfit = (cumSpxIdx - 1) * startCap; 
+                let effectiveHurdle = isAlphaOnly ? Math.max(hwm, spyProfit) : hwm;
+                let currentProfit = reportedNAV - startCap;
+
+                if (currentProfit > effectiveHurdle) {
+                    let taxableProfit = currentProfit - effectiveHurdle;
+                    let totalMtmFee = taxableProfit * annCarryPct;
+                    
+                    // Subtract full fee from credit floor to prevent double-interest bug
+                    creditVal -= totalMtmFee;
+
+                    // Move siphon portion to reserve
+                    let toEscrow = totalMtmFee * 0.50; 
+                    escrowBucket += toEscrow;
+                    
+                    reportedNAV = (creditVal + optValTotal) - monthlyFee;
+                    hwm = reportedNAV - startCap; 
+                }
             }
 
-            // Apply mgmt fee deduction to credit balance for compounding the next year
-            creditVal = creditVal - mgmtFeeAmount;
+            if (m === 120) {
+                let finalSpyValue = cumSpxIdx * startCap;
+                if (reportedNAV < finalSpyValue && escrowBucket > 0) {
+                    let shortfall = finalSpyValue - reportedNAV;
+                    let refundToLP = Math.min(shortfall, escrowBucket);
+                    reportedNAV += refundToLP;
+                }
+            }
 
-            // Benchmarks (ETF includes 1.1% div and 0.03% fee)
-            let prevIdx = data.indexVal[i - 1];
-            data.indexVal.push(prevIdx * (1 + spxRet + 0.011 - 0.0003));
+            let prevBond = data.bonds[m - 1];
+            data.bonds.push(prevBond * (1 + md.bondMonthlyRet));
 
-            let prevBond = data.bonds[i - 1];
-            data.bonds.push(prevBond * (1 + bondRet));
-
-            let prevPe = data.pe[i - 1];
-            let peGross = prevPe * (1 + peRet) * (1 - 0.015); // 1.5% PE Mgmt Fee
+            let prevPe = data.pe[m - 1];
+            let peGross = prevPe * (1 + md.peMonthlyRet) * Math.pow(1 - 0.015, 1/12); 
             let finalPe = peGross;
-            // PE usually calculates carry at the end of the fund life above initial
-            if (i === 10 && peGross > startCap) {
+            if (m === 120 && peGross > startCap) {
                 finalPe = peGross - ((peGross - startCap) * 0.20); 
             }
             data.pe.push(finalPe);
 
-            // Save Data
-            data.labels.push(currentYear);
-            data.total.push(reportedNAV); // Chart uses the smoothed shadow NAV
+            data.indexVal.push(cumSpxIdx * startCap);
+            data.labels.push(md.label);
+            data.total.push(reportedNAV); 
             data.credit.push(creditVal);
-            data.optionVal.push(optionValTotal);
+            data.optionVal.push(optValTotal);
+            data.sofrRates.push(md.rs);
+            data.spreads.push(currentSpread * 100);
         }
 
         const years = 10;
         const stats = {
-            total: getStats(startCap, data.total[years], years),
-            credit: getStats(startCap, data.credit[years], years),
-            indexVal: getStats(startCap, data.indexVal[years], years),
-            bonds: getStats(startCap, data.bonds[years], years),
-            pe: getStats(startCap, data.pe[years], years)
+            total: getStats(startCap, data.total[data.total.length - 1], years),
+            credit: getStats(startCap, data.credit[data.credit.length - 1], years),
+            indexVal: getStats(startCap, data.indexVal[data.indexVal.length - 1], years),
+            pe: getStats(startCap, data.pe[data.pe.length - 1], years),
+            bonds: getStats(startCap, data.bonds[data.bonds.length - 1], years)
         };
 
-        return { labels: data.labels, data, stats };
+        return { labels: data.labels, data, stats, hasSimulatedData };
     }
 
     function getStats(start, end, years) {
@@ -358,75 +711,363 @@
     }
 
     function triggerUpdate() {
-        updateOptionPricing();
-        const startYear = Math.round(slider.noUiSlider.get());
-        const endYear = startYear + 10;
-        document.getElementById('sliderLabel').innerText = `Select 10-Year Block: ${startYear} to ${endYear}`;
+        if(monthlyData.length === 0) return;
 
-        const res = calculate10YearBlock(startYear);
+        const startCap = parseFloat(document.getElementById('startCap').value);
+        const startIndex = Math.round(slider.noUiSlider.get());
+        const startMd = monthlyData[startIndex];
+        const endMd = monthlyData[startIndex + 120];
+        
+        document.getElementById('sliderLabel').innerText = `Select 10-Year Block: ${startMd.label} to ${endMd.label}`;
+
+        const pricing = getOptionPricing(startIndex);
+        
+        if (pricing.isActualBcred) {
+            document.getElementById('bcredDataBadge').style.display = 'inline-block';
+            document.getElementById('bcredProxyBadge').style.display = 'none';
+        } else {
+            document.getElementById('bcredDataBadge').style.display = 'none';
+            document.getElementById('bcredProxyBadge').style.display = 'inline-block';
+        }
+
+        document.getElementById('initialSpreadDisplay').innerText = (pricing.displayedSpread * 100).toFixed(2) + "%";
+        document.getElementById('historicalVolDisplay').innerText = (pricing.vol * 100).toFixed(1) + "%";
+        document.getElementById('historicalRateDisplay').innerText = (pricing.r10 * 100).toFixed(1) + "%";
+        document.getElementById('floorSizeDisplay').innerText = (pricing.initialFloorPct * 100).toFixed(1) + "%";
+        document.getElementById('optionBudgetDisplay').innerText = ((1 - pricing.initialFloorPct) * 100).toFixed(1) + "%";
+        document.getElementById('costSpxFpDisplay').innerText = (pricing.costSpxFp * 100).toFixed(1) + "%";
+        document.getElementById('costSpxDisplay').innerText = (pricing.costSpx * 100).toFixed(1) + "%";
+        document.getElementById('levSpxFpDisplay').innerText = pricing.levSpxFp.toFixed(2) + "x";
+        document.getElementById('levSpxDisplay').innerText = pricing.levSpx.toFixed(2) + "x";
+        document.getElementById('totalLeverageDisplay').innerText = pricing.totalLev.toFixed(2) + "x";
+        document.getElementById('allocDisplay').innerText = `${pricing.allocSpx}% SPX / ${pricing.allocSpxFp}% SPXFP`;
+
+        const annCarryPct = parseFloat(document.getElementById('annCarry').value);
+        const isAlpha = document.getElementById('alphaOnlyToggle').checked;
+        const alertBox = document.getElementById('escrowNote');
+        if (annCarryPct > 0) {
+            alertBox.style.display = 'block';
+            alertBox.innerHTML = isAlpha 
+                ? `<strong>🟠 Alpha-Relative Escrow Active:</strong> Carry is only siphoned on returns exceeding the SPY.`
+                : `<strong>🟠 Escrow Compounding Active:</strong> 50% of Annual MTM Carry is set aside as a reserve. This reserve continues to earn the fund's credit yield. If the fund underperforms the SPY at Year 10, the bucket is refunded to the LP to bridge the gap.`;
+        } else {
+            alertBox.style.display = 'none';
+        }
+
+        const res = calculate10YearBlock(startIndex);
+        
+        const simWarning = document.getElementById('simulatedWarning');
+        if (res.hasSimulatedData) {
+            simWarning.style.display = 'inline-block';
+        } else {
+            simWarning.style.display = 'none';
+        }
+
         const ctx = document.getElementById('mainChart').getContext('2d');
-        const idxName = 'S&P 500 ETF';
+        const idxName = 'S&P 500 (SPY)';
         
         const datasets = [];
         const lbl = (name, s) => `${name} (Cumul: ${s.cumul.toFixed(0)}%)`;
 
-        datasets.push({ label: lbl('GSI Total', res.stats.total), data: res.data.total, borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 3, tension: 0.2, fill: true, order: 1 });
+        datasets.push({ label: lbl('GSI Total Net', res.stats.total), data: res.data.total, borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 3, tension: 0.2, fill: true, order: 1, yAxisID: 'y', pointRadius: 0 });
 
-        if (document.getElementById('showCredit').checked) datasets.push({ label: lbl('Credit Floor', res.stats.credit), data: res.data.credit, borderColor: '#10b981', borderWidth: 2, borderDash: [5,5], pointRadius: 0, order: 2, fill: false });
-        if (document.getElementById('showOption').checked) datasets.push({ label: 'Option Value (Est.)', data: res.data.optionVal, borderColor: '#f97316', borderWidth: 2, pointRadius: 0, order: 3, fill: false });
-        if (document.getElementById('showIndex').checked) datasets.push({ label: lbl(idxName, res.stats.indexVal), data: res.data.indexVal, borderColor: '#64748b', borderWidth: 2, pointRadius: 0, order: 4 });
-        if (document.getElementById('showPE').checked) datasets.push({ label: lbl('Private Equity (Net)', res.stats.pe), data: res.data.pe, borderColor: '#8b5cf6', borderWidth: 2, pointRadius: 0, order: 5 });
-        if (document.getElementById('showBonds').checked) datasets.push({ label: lbl('Bonds', res.stats.bonds), data: res.data.bonds, borderColor: '#f43f5e', borderWidth: 2, pointRadius: 0, order: 6 });
+        if (document.getElementById('showCredit').checked) datasets.push({ label: lbl('Sized Credit Floor', res.stats.credit), data: res.data.credit, borderColor: '#10b981', borderWidth: 2, borderDash: [5,5], pointRadius: 0, order: 2, fill: false, yAxisID: 'y' });
+        if (document.getElementById('showOption').checked) datasets.push({ label: 'Option MTM Value', data: res.data.optionVal, borderColor: '#f97316', borderWidth: 2, pointRadius: 0, order: 3, fill: false, yAxisID: 'y' });
+        if (document.getElementById('showIndex').checked) datasets.push({ label: lbl(idxName, res.stats.indexVal), data: res.data.indexVal, borderColor: '#64748b', borderWidth: 2, pointRadius: 0, order: 4, yAxisID: 'y' });
+        if (document.getElementById('showPE').checked) datasets.push({ label: lbl('Private Equity (Net)', res.stats.pe), data: res.data.pe, borderColor: '#8b5cf6', borderWidth: 2, pointRadius: 0, order: 5, yAxisID: 'y' });
+        if (document.getElementById('showBonds').checked) datasets.push({ label: lbl('Bonds', res.stats.bonds), data: res.data.bonds, borderColor: '#f43f5e', borderWidth: 2, pointRadius: 0, order: 6, yAxisID: 'y' });
+
+        const showSofr = document.getElementById('showSofr').checked;
+        if (showSofr) {
+            datasets.push({
+                label: 'SOFR Rate (%)',
+                data: res.data.sofrRates,
+                borderColor: '#eab308',
+                backgroundColor: '#fef08a',
+                borderWidth: 1,
+                borderDash: [3, 3],
+                pointRadius: 0,
+                yAxisID: 'y1',
+                order: 0
+            });
+        }
+
+        const chartOptions = {
+            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+            plugins: { 
+                tooltip: { 
+                    callbacks: { 
+                        label: c => {
+                            if (c.dataset.yAxisID === 'y1') return c.dataset.label + ': ' + c.raw.toFixed(2) + '%';
+                            return c.dataset.label + ': ' + new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(c.raw);
+                        } 
+                    } 
+                } 
+            },
+            scales: { 
+                y: { type: 'linear', display: true, position: 'left', grid: { color: '#f1f5f9' }, ticks: { callback: v => '$' + v/1000 + 'k' } },
+                y1: { type: 'linear', display: showSofr, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%' } },
+                x: { grid: { display: false }, ticks: { maxTicksLimit: 11 } } 
+            }
+        };
 
         if (myChart) {
             myChart.data.labels = res.labels;
             myChart.data.datasets = datasets;
+            myChart.options = chartOptions;
             myChart.update();
         } else {
             myChart = new Chart(ctx, {
                 type: 'line',
                 data: { labels: res.labels, datasets: datasets },
-                options: {
-                    responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-                    plugins: { tooltip: { callbacks: { label: c => c.dataset.label + ': ' + new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(c.raw) } } },
-                    scales: { y: { grid: { color: '#f1f5f9' }, ticks: { callback: v => '$' + v/1000 + 'k' } }, x: { grid: { display: false } } }
-                }
+                options: chartOptions
             });
         }
-        updateMetrics(res, idxName);
+        
+        updateMetrics(res, idxName, startIndex, startCap);
     }
 
-    function updateMetrics(res, idxName) {
-        const end = 10;
+    function updateMetrics(res, idxName, startIndex, startCap) {
+        const lastIdx = res.data.total.length - 1;
         const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits:0 }).format;
         const mkBox = (lbl, val, stats, className) => `<div class="metric-box ${className}"><div class="metric-label">${lbl}</div><div class="metric-val">${fmt(val)}</div><div class="metric-stats"><span class="stat-badge">IRR: ${stats.irr.toFixed(1)}%</span><span class="stat-badge">Cum: ${stats.cumul.toFixed(0)}%</span></div></div>`;
 
-        let html = mkBox('GSI Total (Net)', res.data.total[end], res.stats.total, 'blue');
-        if (document.getElementById('showCredit').checked) html += mkBox('Credit Floor', res.data.credit[end], res.stats.credit, 'green');
-        if (document.getElementById('showOption').checked) html += `<div class="metric-box orange"><div class="metric-label">Final Option Value</div><div class="metric-val">${fmt(res.data.optionVal[end])}</div><div style="font-size:0.75rem; color:#94a3b8; margin-top:8px;">(Intrinsic at Year 10)</div></div>`;
-        if (document.getElementById('showIndex').checked) html += mkBox(idxName, res.data.indexVal[end], res.stats.indexVal, 'gray');
-        if (document.getElementById('showPE').checked) html += mkBox('Private Equity (Net)', res.data.pe[end], res.stats.pe, 'purple');
-        if (document.getElementById('showBonds').checked) html += mkBox('Bonds', res.data.bonds[end], res.stats.bonds, 'red');
+        let html = mkBox('GSI Total (Net)', res.data.total[lastIdx], res.stats.total, 'blue');
+        if (document.getElementById('showCredit').checked) html += mkBox('Floor Value', res.data.credit[lastIdx], res.stats.credit, 'green');
+        if (document.getElementById('showOption').checked) html += `<div class="metric-box orange"><div class="metric-label">Final Option Profit</div><div class="metric-val">${fmt(res.data.optionVal[lastIdx])}</div></div>`;
+        if (document.getElementById('showIndex').checked) html += mkBox(idxName, res.data.indexVal[lastIdx], res.stats.indexVal, 'gray');
+        if (document.getElementById('showPE').checked) html += mkBox('Private Equity (Net)', res.data.pe[lastIdx], res.stats.pe, 'purple');
+        if (document.getElementById('showBonds').checked) html += mkBox('Bonds', res.data.bonds[lastIdx], res.stats.bonds, 'red');
 
         document.getElementById('metricsContainer').innerHTML = html;
+
+        const tableBody = document.getElementById('yearlyTableBody');
+        let tableHtml = "";
+        const rawFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits:0 });
+
+        for (let i = 0; i <= 10; i++) {
+            let m_idx = i * 12;
+            if (m_idx >= res.data.total.length) break;
+
+            const yieldVal = (res.data.sofrRates[m_idx] + res.data.spreads[m_idx]).toFixed(2);
+            const spyVal = res.data.indexVal[m_idx];
+            const navVal = res.data.total[m_idx];
+            
+            const diff = navVal - spyVal;
+            const outperfPct = ((navVal / spyVal) - 1) * 100;
+            
+            const diffStr = diff >= 0 
+                ? `<span style="color: #10b981;">+${rawFmt.format(diff)} (+${outperfPct.toFixed(1)}%)</span>` 
+                : `<span style="color: #f43f5e;">${rawFmt.format(diff)} (${outperfPct.toFixed(1)}%)</span>`;
+            
+            tableHtml += `<tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 10px;">${res.labels[m_idx]}</td>
+                <td style="padding: 10px;">${res.data.sofrRates[m_idx].toFixed(2)}%</td>
+                <td style="padding: 10px; color: #7c3aed; font-weight: bold;">${res.data.spreads[m_idx].toFixed(2)}%</td>
+                <td style="padding: 10px; font-weight: bold;">${yieldVal}%</td>
+                <td style="padding: 10px;">${rawFmt.format(res.data.credit[m_idx])}</td>
+                <td style="padding: 10px;">${rawFmt.format(res.data.optionVal[m_idx])}</td>
+                <td style="padding: 10px; font-weight: bold; color: #2563eb;">${rawFmt.format(navVal)}</td>
+                <td style="padding: 10px; color: #64748b; border-left: 2px solid #e2e8f0;">${rawFmt.format(spyVal)}</td>
+                <td style="padding: 10px; font-weight: bold;">${diffStr}</td>
+            </tr>`;
+        }
+        tableBody.innerHTML = tableHtml;
+
+        // Vintage Year Filtering Logic
+        let yearRange = tableSlider ? tableSlider.noUiSlider.get() : [1990, 2050];
+        let minFilterYear = parseInt(yearRange[0]);
+        let maxFilterYear = parseInt(yearRange[1]);
+
+        let masterHtml = "";
+        let protectionHtml = "";
+        
+        let totalWins = 0;
+        let totalWinPct = 0;
+        let totalLossPct = 0;
+        let totalOutperfPoints = 0;
+        
+        let downMarketCount = 0;
+        let downMarketGsiTotalReturn = 0;
+        let downMarketSpyTotalReturn = 0;
+        let downMarketWins = 0;
+        let downMarketTotalOutperf = 0;
+
+        let filteredCount = 0;
+
+        for (let idx of validStartIndices) {
+            let startYear = monthlyData[idx].year;
+            if (startYear < minFilterYear || startYear > maxFilterYear) continue;
+            
+            filteredCount++;
+
+            let blockRes = calculate10YearBlock(idx);
+            let finalNav = blockRes.data.total[blockRes.data.total.length - 1];
+            let finalSpy = blockRes.data.indexVal[blockRes.data.indexVal.length - 1];
+            
+            let gsiRet = ((finalNav / startCap) - 1) * 100;
+            let spyRet = ((finalSpy / startCap) - 1) * 100;
+            
+            let outperfPct = ((finalNav / finalSpy) - 1) * 100;
+            let isWin = finalNav >= finalSpy;
+            
+            totalOutperfPoints += outperfPct;
+
+            if (isWin) {
+                totalWins++;
+                totalWinPct += outperfPct;
+            } else {
+                totalLossPct += outperfPct;
+            }
+            
+            let diffStr = outperfPct >= 0 
+                ? `<span style="color: #10b981; font-weight: bold;">+${outperfPct.toFixed(1)}%</span>` 
+                : `<span style="color: #f43f5e; font-weight: bold;">${outperfPct.toFixed(1)}%</span>`;
+                
+            let winLoss = isWin 
+                ? `<span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-weight: bold;">WIN</span>` 
+                : `<span style="background: #ffe4e6; color: #e11d48; padding: 2px 6px; border-radius: 4px; font-weight: bold;">LOSS</span>`;
+            
+            let isSelected = (idx === startIndex);
+            let rowStyle = isSelected ? "background: #eff6ff; border-left: 4px solid #3b82f6;" : "border-bottom: 1px solid #f1f5f9;";
+            let txtColor = isSelected ? "color: #1e40af;" : "color: #334155;";
+            
+            let simTag = blockRes.hasSimulatedData ? `<span class="sim-tag">[SIM]</span>` : '';
+
+            masterHtml += `<tr style="${rowStyle}">
+                <td style="padding: 10px; font-weight: bold; ${txtColor}"><span class="jump-link" onclick="jumpToVintage(${idx})">${monthlyData[idx].label}</span> ${simTag}</td>
+                <td style="padding: 10px;">${rawFmt.format(blockRes.data.total[0])}</td>
+                <td style="padding: 10px; font-weight: bold; color: #2563eb;">${rawFmt.format(finalNav)}</td>
+                <td style="padding: 10px; color: #64748b;">${rawFmt.format(finalSpy)}</td>
+                <td style="padding: 10px;">${diffStr}</td>
+                <td style="padding: 10px;">${winLoss}</td>
+            </tr>`;
+
+            if (finalSpy < startCap) {
+                downMarketCount++;
+                downMarketGsiTotalReturn += gsiRet;
+                downMarketSpyTotalReturn += spyRet;
+                downMarketTotalOutperf += outperfPct;
+                
+                if (isWin) {
+                    downMarketWins++;
+                }
+                
+                let outperfStr = outperfPct >= 0 ? `<span style="color: #10b981; font-weight: bold;">+${outperfPct.toFixed(1)}%</span>` : `<span style="color: #f43f5e; font-weight: bold;">${outperfPct.toFixed(1)}%</span>`;
+                let gsiRetColor = gsiRet >= 0 ? '#10b981' : '#f43f5e';
+                let gsiRetStr = `<span style="color: ${gsiRetColor}; font-weight: bold;">${gsiRet > 0 ? '+' : ''}${gsiRet.toFixed(1)}%</span>`;
+
+                protectionHtml += `<tr style="border-bottom: 1px solid #f1f5f9; background: #fffafb;">
+                    <td style="padding: 10px; font-weight: bold; color: #9f1239;"><span class="jump-link" onclick="jumpToVintage(${idx})">${monthlyData[idx].label}</span> ${simTag}</td>
+                    <td style="padding: 10px; color: #f43f5e; font-weight: bold;">${spyRet.toFixed(1)}%</td>
+                    <td style="padding: 10px;">${gsiRetStr}</td>
+                    <td style="padding: 10px; font-weight: bold; color: #2563eb;">${rawFmt.format(finalNav)}</td>
+                    <td style="padding: 10px; color: #64748b;">${rawFmt.format(finalSpy)}</td>
+                    <td style="padding: 10px;">${outperfStr}</td>
+                </tr>`;
+            }
+        }
+        
+        masterTableBody.innerHTML = masterHtml;
+        
+        const protectionTableBody = document.getElementById('protectionTableBody');
+        if (protectionHtml === "") {
+            protectionTableBody.innerHTML = `<tr><td colspan="6" style="padding: 15px; text-align: center; color: #64748b; font-weight: bold;">No 10-year periods with negative SPY returns found in the selected range.</td></tr>`;
+        } else {
+            protectionTableBody.innerHTML = protectionHtml;
+        }
+
+        // Stress Test Metrics Calculation
+        let avgDownReturn = downMarketCount > 0 ? (downMarketGsiTotalReturn / downMarketCount) : 0;
+        let avgSpyLoss = downMarketCount > 0 ? (downMarketSpyTotalReturn / downMarketCount) : 0;
+        let downWinRatePct = downMarketCount > 0 ? ((downMarketWins / downMarketCount) * 100).toFixed(1) : 0;
+        let avgDownOutp = downMarketCount > 0 ? (downMarketTotalOutperf / downMarketCount) : 0;
+        
+        const downWrDisplay = document.getElementById('downMarketWinRateDisplay');
+        if (downMarketCount > 0) {
+            downWrDisplay.innerText = downWinRatePct + "%";
+            downWrDisplay.style.color = downWinRatePct > 50 ? '#10b981' : '#f43f5e';
+            document.getElementById('downMarketWinBlendDisplay').innerHTML = `<span class="blend-badge blend-win">Wins: ${downMarketWins}</span><span class="blend-badge blend-loss">Losses: ${downMarketCount - downMarketWins}</span>`;
+        } else {
+            downWrDisplay.innerText = "--%";
+            document.getElementById('downMarketWinBlendDisplay').innerHTML = "";
+        }
+
+        document.getElementById('avgProtectionReturnDisplay').innerText = (avgDownReturn > 0 ? "+" : "") + avgDownReturn.toFixed(1) + "%";
+        document.getElementById('avgSpyLossDisplay').innerText = avgSpyLoss.toFixed(1) + "%";
+        
+        const avgDownOutpDisplay = document.getElementById('avgDownOutperformanceDisplay');
+        if (downMarketCount > 0) {
+            avgDownOutpDisplay.innerText = (avgDownOutp >= 0 ? "+" : "") + avgDownOutp.toFixed(1) + "%";
+            avgDownOutpDisplay.style.color = avgDownOutp >= 0 ? '#10b981' : '#f43f5e';
+        } else {
+            avgDownOutpDisplay.innerText = "--%";
+            avgDownOutpDisplay.style.color = '#64748b';
+        }
+
+        // Overall Metrics Calculation
+        const winRatePct = filteredCount > 0 ? ((totalWins / filteredCount) * 100).toFixed(1) : 0;
+        const wrDisplay = document.getElementById('winRateDisplay');
+        wrDisplay.innerText = filteredCount > 0 ? winRatePct + "%" : "--%";
+        wrDisplay.style.color = winRatePct > 50 ? '#10b981' : '#f43f5e';
+        
+        document.getElementById('winBlendDisplay').innerHTML = filteredCount > 0 ? `<span class="blend-badge blend-win">Wins: ${totalWins}</span><span class="blend-badge blend-loss">Losses: ${filteredCount - totalWins}</span>` : "";
+        
+        let totalLosses = filteredCount - totalWins;
+        let avgWinPct = totalWins > 0 ? (totalWinPct / totalWins) : 0;
+        let avgLossPct = totalLosses > 0 ? (totalLossPct / totalLosses) : 0;
+        let avgOverallOutp = filteredCount > 0 ? (totalOutperfPoints / filteredCount) : 0;
+
+        document.getElementById('avgWinPctDisplay').innerText = "+" + avgWinPct.toFixed(1) + "%";
+        document.getElementById('avgLossPctDisplay').innerText = avgLossPct.toFixed(1) + "%";
+        
+        const avgOverallOutpDisplay = document.getElementById('avgOverallOutperformanceDisplay');
+        if (filteredCount > 0) {
+            avgOverallOutpDisplay.innerText = (avgOverallOutp >= 0 ? "+" : "") + avgOverallOutp.toFixed(1) + "%";
+            avgOverallOutpDisplay.style.color = avgOverallOutp >= 0 ? '#10b981' : '#f43f5e';
+        } else {
+            avgOverallOutpDisplay.innerText = "--%";
+            avgOverallOutpDisplay.style.color = '#64748b';
+        }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    function initDashboard() {
+        let maxIdx = validStartIndices[validStartIndices.length - 1];
+        
+        // Main Chart Slider
         slider = document.getElementById('dateSlider');
-        noUiSlider.create(slider, { start: 1998, connect: [true, false], range: { 'min': 1974, 'max': 2014 }, step: 1, tooltips: true, format: { to: v => Math.round(v), from: v => Number(v) } });
+        noUiSlider.create(slider, { start: 0, connect: [true, false], range: { 'min': 0, 'max': maxIdx }, step: 1 });
         slider.noUiSlider.on('update', triggerUpdate);
         
-        ['startCap', 'mgmtFee', 'perfFee', 'allocSlider', 'ivSlider'].forEach(id => {
+        // Table Year Filter Slider
+        let minYear = monthlyData[validStartIndices[0]].year;
+        let maxYear = monthlyData[validStartIndices[maxIdx]].year;
+        
+        tableSlider = document.getElementById('tableYearSlider');
+        noUiSlider.create(tableSlider, {
+            start: [Math.max(1990, minYear), maxYear],
+            connect: true,
+            range: { 'min': minYear, 'max': maxYear },
+            step: 1,
+            format: { to: v => Math.round(v), from: v => Math.round(v) }
+        });
+        
+        tableSlider.noUiSlider.on('update', function(values) {
+            document.getElementById('tableYearRangeDisplay').innerText = values[0] + ' - ' + values[1];
+        });
+        
+        tableSlider.noUiSlider.on('change', triggerUpdate);
+
+        ['startCap', 'mgmtFee', 'annCarry', 'backendCarry', 'allocSlider', 'sizingSpread', 'bcredPremium'].forEach(id => {
             document.getElementById(id).addEventListener('input', triggerUpdate);
         });
 
-        ['showCredit', 'showOption', 'showIndex', 'showPE', 'showBonds'].forEach(id => {
+        ['showCredit', 'showOption', 'showIndex', 'showPE', 'showBonds', 'showSofr', 'alphaOnlyToggle'].forEach(id => {
             document.getElementById(id).addEventListener('change', triggerUpdate);
         });
         
-        // Initial setup
         triggerUpdate();
-    });
+    }
 </script>
 </body>
 </html>
