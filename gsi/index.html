@@ -1,529 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GSI Credit & Option Strategy Explorer</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
-<script src="gsi-calculator.js"></script>
-<style>
-/* Chosen Palette: Warm Institutional Financial */
-    body {
-        font-family: 'Inter', sans-serif;
-        background-color: #F9FAFB;
-        color: #1F2937;
-    }
-    .chart-container {
-        position: relative;
-        width: 100%;
-        max-width: 800px; 
-        margin-left: auto;
-        margin-right: auto;
-        height: 350px; 
-        max-height: 400px;
-    }
-    @media (max-width: 640px) {
-        .chart-container { height: 250px; }
-    }
-    .glass-panel {
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid rgba(229, 231, 235, 1);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        border-radius: 0.75rem;
-    }
-    .interactive-card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        cursor: pointer;
-    }
-    .interactive-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        border-color: #1E40AF;
-    }
-    .range-slider {
-        -webkit-appearance: none;
-        width: 100%;
-        height: 8px;
-        border-radius: 5px;
-        background: #E5E7EB;
-        outline: none;
-    }
-    .range-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: #1E40AF;
-        cursor: pointer;
-        transition: background .15s ease-in-out;
-    }
-    .range-slider::-webkit-slider-thumb:hover { background: #1E3A8A; }
-    
-    /* Toggle & Metric Styling */
-    .toggle-pill { cursor: pointer; transition: all 0.2s ease; }
-    .toggle-active { background: #1E40AF; color: white; box-shadow: 0 4px 6px rgba(30, 64, 175, 0.2); }
-    .badge-institutional { background: #EFF6FF; color: #1E40AF; border: 1px solid #DBEAFE; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GSI | Institutional Downside Protection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC;
+            color: #0F172A;
+            -webkit-font-smoothing: antialiased;
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #1E40AF, #3B82F6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .portal-card {
+            transition: all 0.3s ease;
+        }
+        .portal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-color: #3B82F6;
+        }
+        .graphic-box {
+            background: linear-gradient(145deg, #ffffff, #f1f5f9);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.5), 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+    </style>
 </head>
-<body class="text-gray-800">
+<body class="min-h-screen flex flex-col">
 
-<nav class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex items-center">
-                <span class="text-2xl font-bold text-blue-900 tracking-tight">GSI<span class="text-amber-600">.</span>Explorer</span>
-            </div>
-            <div class="hidden md:flex space-x-8 items-center">
-                <a href="#how-it-works" class="text-gray-600 hover:text-blue-800 font-medium transition">How It Works</a>
-                <a href="https://gorskifamilyoffice.com/gsi/historical.html" class="text-gray-600 hover:text-blue-800 font-medium transition">Historical</a>
-                <a href="https://gorskifamilyoffice.com/gsi/psa.html" class="text-gray-600 hover:text-blue-800 font-medium transition">Projections</a>
-                <button onclick="scrollToSection('simulator')" class="bg-blue-800 text-white px-4 py-2 rounded-md font-semibold hover:bg-blue-900 transition shadow-sm">
-                    Simulate Returns
-                </button>
-            </div>
-        </div>
-    </div>
-</nav>
-
-<section class="relative bg-white overflow-hidden">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 text-center">
-        <div class="inline-flex items-center space-x-2 mb-6">
-        </div>
-        <div class="max-w-3xl mx-auto">
-            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
-                Credit Yield + <br> <span class="text-blue-800">Levered Equity Upside</span>
-            </h1>
-            <p class="text-xl text-gray-600 mb-10 leading-relaxed">
-                Discover how the <strong>GSI Strategy</strong> combines the reliability of credit with the explosive potential of 10-Year OTC Call Options to simulate a levered index return—outperforming traditional portfolios.
-            </p>
-            <div class="flex flex-col sm:flex-row justify-center gap-4">
-                <button onclick="scrollToSection('how-it-works')" class="px-8 py-3 bg-white text-blue-800 border-2 border-blue-800 rounded-lg font-bold hover:bg-blue-50 transition">
-                    Explain the Strategy
-                </button>
-                <button onclick="scrollToSection('simulator')" class="px-8 py-3 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 transition shadow-lg">
-                    Run Simulation &darr;
-                </button>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section id="how-it-works" class="py-16 bg-gray-50 border-t border-gray-200">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-12">
-            <h2 class="text-3xl font-bold text-gray-900">The Structural Engine</h2>
-            <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-                Traditional portfolios force you to choose between safety (bonds) and growth (stocks). We utilize a structural arbitrage approach to achieve both simultaneously.
-            </p>
-        </div>
-
-        <div class="relative">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
-                <div class="glass-panel p-8 interactive-card relative group" onclick="highlightStep(1)">
-                    <div class="absolute -top-4 left-8 bg-gray-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md">1</div>
-                    <div class="text-amber-600 text-4xl mb-4 font-bold">&#9878;</div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">The Foundation: Credit/Bonds</h3>
-                    <p class="text-gray-600 text-sm">
-                        Capital is deployed into diversified Credit/Bond strategies. This generates a safe, stable base yield (est. 9-11%).
-                    </p>
-                </div>
-
-                <div class="glass-panel p-8 interactive-card relative group" onclick="highlightStep(2)">
-                    <div class="absolute -top-4 left-8 bg-gray-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md">2</div>
-                    <div class="text-blue-800 text-4xl mb-4 font-bold">&#8669;</div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">The Catalyst: Option Funding</h3>
-                    <p class="text-gray-600 text-sm">
-                        Instead of paying out the yield (9-11%), we use it to purchase <strong>10-Year OTC Call Options</strong> on the S&P 500.
-                    </p>
-                </div>
-
-                <div class="glass-panel p-8 interactive-card relative group" onclick="highlightStep(3)">
-                    <div class="absolute -top-4 left-8 bg-gray-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md">3</div>
-                    <div class="text-green-600 text-4xl mb-4 font-bold">&#128200;</div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">The Result: Levered Returns</h3>
-                    <p class="text-gray-600 text-sm">
-                        The options provide amplified exposure to index upside. If the market rises, you get Multiplier x Return. If it falls, the principal is defended by the credit base.
-                    </p>
-                </div>
-            </div>
-        </div>
-        
-        <div id="step-detail-box" class="mt-8 bg-blue-50 border border-blue-100 rounded-lg p-6 text-center hidden transition-all duration-300">
-            <p id="step-detail-text" class="text-blue-900 font-medium"></p>
-        </div>
-    </div>
-</section>
-
-<section id="simulator" class="py-16 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            
-            <div class="lg:col-span-4 space-y-8">
-                <div>
-                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Long-Term Return Simulator</h2>
-                    <p class="text-gray-600">
-                        Adjust the <strong>annual</strong> market conditions to see how the GSI Strategy's structure compounds over a <strong>10-Year Horizon</strong>.
-                    </p>
-                </div>
-
-                <div class="glass-panel p-6 bg-gray-50">
-                    <div class="flex justify-between items-center mb-2">
-                        <label id="idx-slider-label" class="text-sm font-bold text-gray-700">Annual SPX Price Return</label>
-                        <button onclick="applyStressTest()" class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-black hover:bg-red-700 hover:text-white transition uppercase">Stress Test</button>
-                    </div>
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-red-600 font-semibold">-20%</span>
-                        <span id="spx-return-display" class="text-2xl font-bold text-blue-800">8%</span>
-                        <span class="text-green-600 font-semibold">+20%</span>
-                    </div>
-                    <input type="range" id="spx-return" min="-20" max="20" value="8" step="1" class="range-slider mb-6">
-                    
-                    <div class="mb-6">
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Implied Volatility (10Y)</label>
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs text-gray-500">10%</span>
-                            <span id="iv-display" class="text-lg font-bold text-blue-800">22%</span>
-                            <span class="text-xs text-gray-500">40%</span>
-                        </div>
-                        <input type="range" id="iv-slider" min="10" max="40" value="22" step="1" class="range-slider">
-                    </div>
-
-                    <div class="mb-6 p-4 bg-blue-900 rounded-lg text-white">
-                        <label class="block text-xs font-bold uppercase tracking-widest opacity-80 mb-3">Option Allocation Blend</label>
-                        <input type="range" id="blend-slider" min="0" max="100" value="0" class="range-slider accent-amber-500">
-                        <div class="flex justify-between text-[10px] mt-2 font-bold uppercase">
-                            <span class="text-amber-400">100% SPX</span>
-                            <span>50/50 Blend</span>
-                            <span>100% SPXFP</span>
-                        </div>
-                        <div class="mt-4 pt-3 border-t border-blue-800 text-[11px] space-y-1">
-                            <div class="flex justify-between opacity-80"><span>SPXFP Multiplier:</span><span id="lev-fp-label">1.30x</span></div>
-                            <div class="flex justify-between opacity-80"><span>SPX Multiplier:</span><span id="lev-std-label">0.79x</span></div>
-                            <div class="flex justify-between font-bold text-amber-400"><span>Total Leverage:</span><span id="lev-total-label">2.09x</span></div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center text-sm border-b border-gray-200 pb-2">
-                            <span id="idx-div-label" class="text-gray-600">S&P 500 Dividend Yield</span>
-                            <span id="idx-div-display" class="font-mono font-bold text-gray-900">1.1%</span>
-                        </div>
-                        
-                        <div class="mb-2">
-                            <div class="flex justify-between items-center text-sm mb-1">
-                                <span class="text-gray-600">Assumed SOFR</span>
-                                <span id="sofr-display" class="font-mono font-bold text-gray-900">3.5%</span>
-                            </div>
-                            <input type="range" id="sofr-slider" min="0" max="10" value="3.5" step="0.1" class="range-slider">
-                        </div>
-
-                        <div class="flex justify-between items-center text-sm border-b border-gray-200 pb-2">
-                            <span class="text-gray-600">Credit Yield (SOFR + 6%)</span>
-                            <span id="credit-yield-display" class="font-mono font-bold text-gray-900">9.5%</span>
-                        </div>
-                        
-                        <div class="bg-gray-100 p-3 rounded text-xs space-y-1">
-                            <div class="font-bold text-gray-700 mb-1">Fee Structure & Assumptions:</div>
-                            <div class="flex justify-between text-gray-600">
-                                <span>GSI Mgmt Fee (Annual)</span>
-                                <span class="text-gray-900 font-bold">0.50%</span>
-                            </div>
-                            <div class="flex justify-between text-gray-600">
-                                <span>GSI Perf. Fee (Accrued)</span>
-                                <span class="text-gray-900 font-bold">20.0%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="lg:col-span-8">
-                <div class="flex flex-col h-full">
-                    <div class="mb-4 flex flex-wrap gap-4 justify-between items-center">
-                        <h3 class="text-lg font-semibold text-gray-800">10-Year Growth Projection (Cumulative)</h3>
-                        
-                        <div class="flex items-center space-x-1 p-1 bg-gray-100 rounded-lg">
-                            <button id="toggleGross" onclick="setFeeMode('gross')" class="toggle-pill px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest">Gross</button>
-                            <button id="toggleNet" onclick="setFeeMode('net')" class="toggle-pill px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest toggle-active">Net (Fees)</button>
-                        </div>
-                    </div>
-                    
-                    <div class="chart-container bg-white border border-gray-100 rounded-lg shadow-inner p-4">
-                        <canvas id="simulationChart"></canvas>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-4 mt-6">
-                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 text-center flex flex-col justify-center">
-                            <div class="text-[10px] font-bold text-blue-800 uppercase tracking-wide mb-2">GSI Strategy</div>
-                            <div class="flex justify-center items-baseline space-x-1">
-                                <span id="gsi-irr-display" class="text-2xl font-black text-blue-900">--%</span>
-                                <span class="text-[10px] font-bold text-blue-600">IRR</span>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center flex flex-col justify-center">
-                            <div id="idx-metric-label" class="text-[10px] font-bold text-gray-600 uppercase tracking-wide mb-2">S&P 500 ETF</div>
-                            <div class="flex justify-center items-baseline space-x-1">
-                                <span id="spx-irr-display" class="text-2xl font-black text-gray-800">--%</span>
-                                <span class="text-[10px] font-bold text-gray-500">IRR</span>
-                            </div>
-                        </div>
-
-                        <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200 text-center flex flex-col justify-center">
-                            <div class="text-[10px] font-bold text-emerald-800 uppercase tracking-wide mb-2">Strategy Outperf.</div>
-                            <div class="flex justify-center items-baseline space-x-1">
-                                <span id="alpha-display" class="text-2xl font-black text-emerald-900">+$0</span>
-                            </div>
-                            <div class="text-[10px] font-bold text-emerald-600 mt-1">per $100k invested</div>
-                        </div>
-                    </div>
-
-                    <div class="mt-6 bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                        <table class="w-full text-sm text-left">
-                            <thead class="bg-gray-50 border-b border-gray-200 text-xs uppercase font-bold text-gray-500">
-                                <tr>
-                                    <th class="px-5 py-3">Strategy / Asset ($100k Initial)</th>
-                                    <th class="px-5 py-3 text-right">Net IRR</th>
-                                    <th class="px-5 py-3 text-right">Final 10Y Value</th>
-                                </tr>
-                            </thead>
-                            <tbody id="comparison-table-body" class="divide-y divide-gray-100 font-semibold text-gray-700">
-                                </tbody>
-                        </table>
-                    </div>
-
-                    <div id="simulation-commentary" class="mt-6 p-4 rounded-lg bg-gray-50 border-l-4 border-blue-800 text-sm leading-relaxed">
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-</section>
-
-<section id="performance" class="py-16 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="bg-white rounded-2xl shadow-xl p-8 md:p-12 text-center border border-gray-200">
-            <h2 class="text-3xl font-bold text-gray-900 mb-4">Historical Strategy Analysis</h2>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
-                Explore the detailed historical backtest (1974–2024), showing how the structural arbitrage model would have performed across five decades of market cycles.
-            </p>
-            <a href="https://gorskifamilyoffice.com/gsi/historical.html" class="inline-flex items-center justify-center px-8 py-3 bg-blue-800 text-white font-bold rounded-lg hover:bg-blue-900 transition shadow-lg transform hover:-translate-y-0.5">
-                View Historical Data &rarr;
+    <nav class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="text-2xl font-extrabold text-slate-900 tracking-tight no-underline hover:opacity-80 transition">
+                GSI<span class="text-amber-500">.</span>Explorer
             </a>
+            <div class="hidden md:flex space-x-8 text-sm font-semibold text-slate-500">
+                <a href="index.html" class="text-blue-700 font-bold">Home</a>
+                <a href="psa.html" class="hover:text-blue-700 transition">Projections</a>
+                <a href="historical.html" class="hover:text-blue-700 transition">Historical Backtest (50-Year)</a>
+            </div>
         </div>
-    </div>
-</section>
+    </nav>
 
-<script>
-    function scrollToSection(id) {
-        const element = document.getElementById(id);
-        if (element) { element.scrollIntoView({ behavior: 'smooth' }); }
-    }
+    <header class="max-w-4xl mx-auto px-6 py-20 text-center">
+        <div class="inline-block bg-blue-50 text-blue-700 font-bold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest mb-6 border border-blue-100">
+            The Next Evolution of Alternative Yield
+        </div>
+        <h1 class="text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-tight mb-6">
+            Targeted Principal Protection.<br>
+            <span class="gradient-text">Institutional Alpha.</span>
+        </h1>
+        <p class="text-lg md:text-xl text-slate-500 font-medium leading-relaxed max-w-3xl mx-auto mb-10">
+            We combine high-yielding private credit with algorithmic options pricing to deliver uncapped S&P 500 upside with a mathematically targeted principal floor. <strong>Flexible fee structures. Dedicated GP alignment.</strong>
+        </p>
+    </header>
 
-    function highlightStep(stepNum) {
-        const detailBox = document.getElementById('step-detail-box');
-        const detailText = document.getElementById('step-detail-text');
-        let message = "";
-        switch(stepNum) {
-            case 1: message = "Step 1: We seek safe, stable yields (estimated tax equivalent 9-11%) from credit/bonds. This acts as the engine room."; break;
-            case 2: message = "Step 2: That 9-11% yield isn't just pocketed. It buys 10-year Call Options for cheap leverage."; break;
-            case 3: message = "Step 3: The Synergy. If stocks stay flat, the credit/bond yield covers the premium. If stocks boom, the options multiply the gain."; break;
-        }
-        detailText.textContent = message;
-        detailBox.classList.remove('hidden');
-        detailBox.classList.add('block');
-    }
-
-    // --- Simulator Wiring ---
-    let feeMode = 'net';
-    function setFeeMode(mode) {
-        feeMode = mode;
-        document.getElementById('toggleGross').classList.toggle('toggle-active', mode === 'gross');
-        document.getElementById('toggleNet').classList.toggle('toggle-active', mode === 'net');
-        updateSimulation();
-    }
-
-    function applyStressTest() {
-        document.getElementById('spx-return').value = -10;
-        updateSimulation();
-    }
-
-    const ctxSim = document.getElementById('simulationChart').getContext('2d');
-    const spxSlider = document.getElementById('spx-return');
-    const ivSlider = document.getElementById('iv-slider');
-    const blendSlider = document.getElementById('blend-slider');
-    const sofrSlider = document.getElementById('sofr-slider');
-    
-    const spxDisplay = document.getElementById('spx-return-display');
-    const ivDisplay = document.getElementById('iv-display');
-    const commentaryBox = document.getElementById('simulation-commentary');
-    
-    // Metrics
-    const irrDisplay = document.getElementById('gsi-irr-display');
-    const alphaDisplay = document.getElementById('alpha-display');
-    const spxIrrDisplay = document.getElementById('spx-irr-display');
-    const tableBody = document.getElementById('comparison-table-body');
-
-    // Chart Initialization
-    const simChart = new Chart(ctxSim, {
-        type: 'line',
-        data: {
-            labels: [], 
-            datasets: [
-                { label: 'Index ETF', borderColor: '#9CA3AF', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, data: [] },
-                { label: 'GSI Strategy', borderColor: '#1E40AF', borderWidth: 3, pointRadius: 0, data: [] }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let val = context.raw;
-                            let growth = ((val / 100) - 1) * 100; 
-                            return context.dataset.label + ': ' + growth.toFixed(1) + '% cumulative';
-                        }
-                    }
-                },
-                legend: { display: false }
-            },
-            scales: {
-                y: { display: true, title: { display: true, text: 'Portfolio Value ($100 Base)' } },
-                x: { display: true, ticks: { maxTicksLimit: 10 } } 
-            }
-        }
-    });
-
-    const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
-
-    function updateSimulation() {
-        const divYield = 1.1; 
-        const sofrAssumed = parseFloat(sofrSlider.value);
-        const creditYield = sofrAssumed + 6.0;
-
-        // Update UI Labels
-        document.getElementById('sofr-display').textContent = sofrAssumed.toFixed(1) + "%";
-        document.getElementById('credit-yield-display').textContent = creditYield.toFixed(1) + "%";
-
-        const spxPriceReturn = parseFloat(spxSlider.value);
-        spxDisplay.textContent = (spxPriceReturn > 0 ? "+" : "") + spxPriceReturn + "%";
-        
-        const ivValue = parseFloat(ivSlider.value);
-        ivDisplay.textContent = ivValue + "%";
-
-        const blendValue = parseFloat(blendSlider.value);
-
-        // Pricing Math
-        const costFp = 0.20 * (ivValue / 22);
-        const costStd = 0.33 * (ivValue / 22);
-        const budgetFp = 0.52 * (blendValue / 100);
-        const budgetStd = 0.52 * ((100 - blendValue) / 100);
-
-        const levFp = budgetFp / costFp;
-        const levStd = budgetStd / costStd;
-        const totalLev = levFp + levStd;
-
-        document.getElementById('lev-fp-label').innerText = levFp.toFixed(2) + "x";
-        document.getElementById('lev-std-label').innerText = levStd.toFixed(2) + "x";
-        document.getElementById('lev-total-label').innerText = totalLev.toFixed(2) + "x";
-
-        // Logic for Chart Data
-        let labels = ['Start'], gsiData = [100], spxData = [100];
-        
-        const spxOptGrowthFactor = 1 + ((spxPriceReturn) / 100);
-        const sofrGrowthFactor = 1 + (sofrAssumed / 100);
-        
-        // ETF Total Growth
-        const totalIdxGrowthFactor = 1 + ((spxPriceReturn + divYield - 0.03) / 100);
-
-        const mFee = feeMode === 'net' ? 0.005 : 0;
-        const cFee = feeMode === 'net' ? 0.20 : 0;
-
-        for(let i=1; i<=10; i++) {
-            labels.push("Year " + i);
-            spxData.push(100 * Math.pow(totalIdxGrowthFactor, i));
-
-            // Component values for GSI using updated option growth
-            const cumSpxOpt = Math.pow(spxOptGrowthFactor, i);
-            const cumSofr = Math.pow(sofrGrowthFactor, i);
-            const spxfpRet = (cumSpxOpt / cumSofr) - 1;
-            const spxRetCum = cumSpxOpt - 1;
-
-            const fpGain = Math.max(0, levFp * spxfpRet) * 100;
-            const stdGain = Math.max(0, levStd * spxRetCum) * 100;
-            const creditComp = 48 * Math.pow(1 + (creditYield/100), i);
-
-            const grossValue = creditComp + fpGain + stdGain + (52 * (10-i)/10);
+    <section id="how-it-works" class="max-w-6xl mx-auto px-6 mb-24">
+        <div class="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden">
+            <div class="border-b border-gray-100 bg-gray-50 px-8 py-6">
+                <h2 class="text-xl font-bold text-slate-800">The Capital Stack Mechanics</h2>
+                <p class="text-sm text-slate-500 mt-1">How we utilize a ~9.0% credit yield to target structural equity protection over 10 years.</p>
+            </div>
             
-            // Apply Fees using "Accrued Carry" (Shadow NAV) logic to smooth the chart
-            let workingValue = grossValue;
-            if (feeMode === 'net') {
-                // Apply fixed management fee on initial commitment (100 base)
-                const mgmtFeeAmount = 100 * mFee * i;
-                workingValue = workingValue - mgmtFeeAmount;
+            <div class="p-8 md:p-12 flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
                 
-                let reportedNAV = workingValue;
-                // Accrue the 20% carry continuously on paper for charting purposes
-                if (workingValue > 100) {
-                    reportedNAV = 100 + ((workingValue - 100) * (1 - cFee)); 
-                }
-                gsiData.push(reportedNAV);
-            } else {
-                gsiData.push(workingValue);
-            }
-        }
+                <div class="flex flex-col items-center w-full md:w-64">
+                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Day 1 Investment</h3>
+                    <div class="w-full flex flex-col gap-2 relative">
+                        <div class="graphic-box rounded-lg p-4 border border-orange-200 border-l-4 border-l-orange-500 text-center h-28 flex flex-col justify-center">
+                            <span class="text-xs font-bold text-orange-600 uppercase">Option Budget</span>
+                            <span class="text-xl font-black text-slate-800">~ 50%</span>
+                            <span class="text-[10px] text-slate-400 leading-tight mt-1">Buys 10Y S&P 500 Exposure</span>
+                        </div>
+                        <div class="graphic-box rounded-lg p-4 border border-emerald-200 border-l-4 border-l-emerald-500 text-center h-28 flex flex-col justify-center relative">
+                            <span class="text-xs font-bold text-emerald-600 uppercase">Credit Floor</span>
+                            <span class="text-xl font-black text-slate-800">~ 50%</span>
+                            <span class="text-[10px] text-slate-400 leading-tight mt-1">Invested in ~9.0% Private Credit</span>
+                        </div>
+                    </div>
+                </div>
 
-        simChart.data.labels = labels;
-        simChart.data.datasets[0].data = spxData;
-        simChart.data.datasets[1].data = gsiData;
-        simChart.update();
+                <div class="flex flex-col items-center text-slate-300 hidden md:flex">
+                    <span class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">10 Years</span>
+                    <svg class="w-16 h-8 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    <span class="text-[10px] font-semibold text-slate-400 mt-2 text-center">Continuous<br>Compounding</span>
+                </div>
 
-        // Metrics
-        const finalGSI = gsiData[10];
-        const finalSPX = spxData[10];
-        
-        const baseInvestment = 100000;
-        const multiplier = baseInvestment / 100;
-        
-        const gsiIrr = ((Math.pow(finalGSI/100, 0.1) - 1) * 100);
-        const spxIrr = ((Math.pow(finalSPX/100, 0.1) - 1) * 100);
-        const alpha = (finalGSI * multiplier) - (finalSPX * multiplier);
+                <div class="flex flex-col items-center w-full md:w-64">
+                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Year 10 Target</h3>
+                    <div class="w-full flex flex-col gap-2 relative">
+                        <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-300 border-l-4 border-l-orange-500 text-center h-24 flex flex-col justify-center transform transition hover:scale-105">
+                            <span class="text-xs font-bold text-orange-600 uppercase">Market Upside</span>
+                            <span class="text-xl font-black text-orange-600">Uncapped</span>
+                            <span class="text-[10px] text-orange-600/70 leading-tight mt-1">If SPX falls, options expire worthless</span>
+                        </div>
+                        <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg p-4 border border-emerald-300 border-l-4 border-l-emerald-500 text-center h-32 flex flex-col justify-center transform transition hover:scale-105 shadow-inner">
+                            <span class="text-xs font-bold text-emerald-700 uppercase">Targeted Principal</span>
+                            <span class="text-3xl font-black text-emerald-600">100%</span>
+                            <span class="text-[10px] font-medium text-emerald-800 leading-tight mt-2 px-2">The initial 50% compounds to target the replacement of your original investment.</span>
+                        </div>
+                    </div>
+                </div>
 
-        irrDisplay.textContent = gsiIrr.toFixed(1) + "%";
-        spxIrrDisplay.textContent = spxIrr.toFixed(1) + "%";
-        alphaDisplay.textContent = (alpha >= 0 ? "+" : "") + "$" + alpha.toFixed(0);
+            </div>
+        </div>
+    </section>
 
-        // Populate Summary Table (Focused on GSI vs SPX ETF)
-        tableBody.innerHTML = `
-            <tr class="bg-blue-50/50 hover:bg-blue-100/50 transition duration-150 border-l-4 border-blue-600">
-                <td class="px-5 py-4 font-black text-blue-900">GSI Strategy (${feeMode.toUpperCase()})</td>
-                <td class="px-5 py-4 text-right text-blue-800 font-bold">${gsiIrr.toFixed(1)}%</td>
-                <td class="px-5 py-4 text-right text-blue-800 font-black text-lg">${formatCurrency(finalGSI * multiplier)}</td>
-            </tr>
-            <tr class="hover:bg-gray-50 transition duration-150 border-l-4 border-gray-400">
-                <td class="px-5 py-4 font-bold text-gray-900">S&P 500 ETF (Net)</td>
-                <td class="px-5 py-4 text-right text-gray-700">${spxIrr.toFixed(1)}%</td>
-                <td class="px-5 py-4 text-right font-bold text-gray-800">${formatCurrency(finalSPX * multiplier)}</td>
-            </tr>
-        `;
+    <section class="bg-slate-900 py-20 mb-20 text-white">
+        <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div>
+                <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-6 border border-blue-500/30">
+                    <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold mb-3 text-white">Targeted Downside Floor</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">By sizing a mathematical floor into institutional private credit, we aim to structure away the catastrophic tail-risk of equity investing, helping you weather market drawdowns.</p>
+            </div>
+            <div>
+                <div class="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center mb-6 border border-emerald-500/30">
+                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold mb-3 text-white">Uncapped S&P Participation</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">The remaining capital budget buys 10-year European Call Options on the S&P 500, designed to grant you leveraged exposure to the market's long-term upside.</p>
+            </div>
+            <div>
+                <div class="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center mb-6 border border-amber-500/30">
+                    <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold mb-3 text-white">The Alignment Escrow</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">We offer highly flexible fee arrangements ranging from standard management fees (0.5%) to 0% base structures. Performance fees can be locked in an off-balance-sheet compounding escrow, refunded to bridge any gap to the benchmark.</p>
+            </div>
+        </div>
+    </section>
 
-        // Commentary
-        let comment = `Analysis (${feeMode.toUpperCase()}): At **${totalLev.toFixed(2)}x** leverage, the strategy turns a $100k investment into **${formatCurrency(finalGSI * multiplier)}** over 10 years. While the ETF risks principal in down-cycles, your **${creditYield.toFixed(1)}% Credit Floor** protects capital.`;
-        if(blendValue > 20) {
-            comment += ` Note: The SPXFP leg faces an interest rate hurdle of **${((Math.pow(1 + sofrAssumed/100, 10)-1)*100).toFixed(1)}%** before contributing alpha.`;
-        }
-        commentaryBox.innerHTML = comment;
-    }
+    <section class="max-w-6xl mx-auto px-6 mb-24">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-extrabold text-slate-900">Prove the Math.</h2>
+            <p class="text-slate-500 mt-3 font-medium">Explore our proprietary quantitative models below.</p>
+        </div>
 
-    [spxSlider, ivSlider, blendSlider, sofrSlider].forEach(el => el.addEventListener('input', updateSimulation));
-    window.onload = updateSimulation;
-</script>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <a href="psa.html" class="portal-card bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col group cursor-pointer block no-underline">
+                <div class="h-3 bg-blue-600"></div>
+                <div class="p-8 flex-grow">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="bg-blue-100 p-3 rounded-full text-blue-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition">Live Projections</h3>
+                    </div>
+                    <p class="text-slate-500 text-sm leading-relaxed mb-6">
+                        Adjust implied volatility, private credit spreads, and SPX forward blends in real-time. See exactly how the Black-Scholes budget allocates capital on Day 1 to structure the 10-year target.
+                    </p>
+                    <div class="mt-auto flex items-center text-sm font-bold text-blue-600">
+                        Launch Projections <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </div>
+                </div>
+            </a>
+
+            <a href="historical.html" class="portal-card bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col group cursor-pointer block no-underline">
+                <div class="h-3 bg-emerald-500"></div>
+                <div class="p-8 flex-grow">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="bg-emerald-100 p-3 rounded-full text-emerald-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-900 group-hover:text-emerald-600 transition">50-Year Backtest</h3>
+                    </div>
+                    <p class="text-slate-500 text-sm leading-relaxed mb-6">
+                        Stress-test the strategy against half a century of actual market data. See how the structure performed through the Dot-com bubble, the 2008 Financial Crisis, and the inflationary 1970s.
+                    </p>
+                    <div class="mt-auto flex items-center text-sm font-bold text-emerald-600">
+                        View Historical Data <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </div>
+                </div>
+            </a>
+
+        </div>
+    </section>
+
+    <footer class="mt-auto border-t border-gray-200 bg-white py-10">
+        <div class="max-w-7xl mx-auto px-6 text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="text-xl font-extrabold text-slate-300 tracking-tight">
+                GSI<span class="text-amber-300">.</span>Explorer
+            </div>
+            <p class="text-xs text-slate-400 font-medium max-w-2xl">
+                FOR INSTITUTIONAL USE ONLY. This page contains theoretical structural modeling and does not constitute an offer to sell or a solicitation of an offer to buy any securities. Targeted protection assumes the credit vehicle avoids major defaults and reaches maturity. Options involve risk and are not suitable for all investors. 
+            </p>
+        </div>
+    </footer>
+
 </body>
 </html>
