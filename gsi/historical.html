@@ -85,8 +85,6 @@
         .disclaimer-list { padding-left: 20px; }
         .disclaimer-list li { margin-bottom: 15px; }
         .disclaimer-category { font-weight: 800; color: #1e293b; margin-top: 25px; margin-bottom: 10px; font-size: 0.9rem; text-transform: uppercase; }
-        
-        .gp-rev-highlight { background: #f0fdf4; color: #166534; border-left: 2px solid #22c55e; }
     </style>
 </head>
 <body>
@@ -352,7 +350,6 @@
                     Overall Win Rate vs SPY: <span id="winRateDisplay" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
                     <span id="winBlendDisplay" style="margin-left: 5px;"></span>
                 </div>
-                <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 5px;">Avg GP Revenue per Vintage: <span id="avgGpRevDisplay" style="color: #16a34a; font-weight: bold; font-size: 1.1rem;">$--</span></div>
                 <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 5px;">Avg Gain (When Winning): <span id="avgWinPctDisplay" style="color: #10b981; font-weight: bold; font-size: 1.1rem;">--%</span></div>
                 <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 2px;">Avg Loss (When Underperforming): <span id="avgLossPctDisplay" style="color: #f43f5e; font-weight: bold; font-size: 1.1rem;">--%</span></div>
                 <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 2px;">Avg Outperformance: <span id="avgOverallOutperformanceDisplay" style="color: #10b981; font-weight: bold; font-size: 1.1rem;">--%</span></div>
@@ -368,7 +365,6 @@
                         <th style="padding: 12px; border-bottom: 1px solid var(--border);">Final SPY NAV ($)</th>
                         <th style="padding: 12px; border-bottom: 1px solid var(--border);">Relative Outperformance vs SPY</th>
                         <th style="padding: 12px; border-bottom: 1px solid var(--border);">Result vs SPY</th>
-                        <th style="padding: 12px; border-bottom: 1px solid var(--border); background: #f0fdf4; color: #166534;">GP Total Revenue ($)</th>
                     </tr>
                 </thead>
                 <tbody id="masterTableBody"></tbody>
@@ -397,7 +393,6 @@
             <li><strong>Zero Trading Friction:</strong> The model assumes zero transaction costs. It does not account for slippage, bid-ask spreads, broker commissions, or the lack of liquidity that often plagues 10-year OTC derivatives. It assumes you can buy the exact calculated fractional amount of exposure at perfectly efficient mid-market prices.</li>
             <li><strong>Liquidity and Deployment Constraints:</strong> The model operates on the theoretical assumption of 100% Day-1 liquidity. It assumes all capital is perfectly deployed into options and the credit floor exactly at the start of the 120-month vintage. It completely ignores capital call mechanics, ramp-up periods, J-curves, lock-ups, or cash drag typical of real-world private market alternative funds.</li>
             <li><strong>Fee Accounting and Escrow Compounding:</strong> When Annual MTM Carry is enabled, the model employs strict "Source-Based Accounting." Performance fees are immediately subtracted from the interest-bearing credit floor principal to prevent "ghost interest." If the escrow feature is active, siphoned fees are tracked in a separate reserve that assumes perfect reinvestment and compounds continuously at the exact private credit yield, with zero un-invested cash drag.</li>
-            <li><strong>GP Revenue Tracking:</strong> Total GP Revenue is calculated as cash legally cleared to the management company. This includes base management fees, realized MTM carry (net of escrow deductions), backend carry upon maturity, and any remaining escrow balances that did not trigger a shortfall refund.</li>
             <li><strong>Default Risk & Credit Losses:</strong> The modeled private credit yields are assumed to be "Net of Defaults." It assumes either zero defaults, or that the portfolio is so perfectly diversified and structured that the modeled spread fully absorbs and accounts for any underlying loan losses. A real-world concentration of defaults would severely impact the principal protection floor.</li>
             <li><strong>Tax and Regulatory Constraints:</strong> All returns shown are strictly Gross of Investor-Level Taxes. The complex carry structures, high-water marks, options taxation rules (e.g., Section 1256 contracts), and escrow clawbacks do not account for partnership tax accounting, phantom income, or specific regulatory hurdles that would apply to a live structured product.</li>
             <li><strong>Simulated Macro Scenarios:</strong> Vintages explicitly marked with the "[SIM]" tag indicate that historical gaps in specific macro data feeds have been patched using mathematical simulations, interpolated backward curves, or historical averages. These do not represent real-world events.</li>
@@ -605,7 +600,6 @@
         let cumSpxIdx = 1.0; 
         let hwm = 0.0; 
         let escrowBucket = 0.0; 
-        let gpCashCollected = 0.0;
         
         let hasSimulatedData = startMd.isSimulated;
 
@@ -648,7 +642,6 @@
             let optValTotal = (pricing.levSpx * mtmSpx_unit + pricing.levSpxFp * mtmFp_unit) * (startCap / 100.0);
             
             let monthlyFee = (startCap * mgmtFeePct) / 12;
-            gpCashCollected += monthlyFee;
 
             let reportedNAV = (creditVal + optValTotal) - monthlyFee;
 
@@ -666,8 +659,6 @@
                     let toEscrow = totalMtmFee * 0.50; 
                     escrowBucket += toEscrow;
                     
-                    gpCashCollected += (totalMtmFee - toEscrow);
-                    
                     reportedNAV = (creditVal + optValTotal) - monthlyFee;
                     hwm = reportedNAV - startCap; 
                 }
@@ -683,8 +674,6 @@
                     escrowBucket -= refundToLP;
                 }
                 
-                gpCashCollected += escrowBucket;
-
                 if (backendCarryPct > 0) {
                     let backendHurdle = isAlphaOnly 
                         ? Math.max(startCap + hwm, finalSpyValue) 
@@ -693,7 +682,6 @@
                     if (reportedNAV > backendHurdle) {
                         let backendFee = (reportedNAV - backendHurdle) * backendCarryPct;
                         reportedNAV -= backendFee;
-                        gpCashCollected += backendFee;
                     }
                 }
             }
@@ -727,7 +715,7 @@
             bonds: getStats(startCap, data.bonds[data.bonds.length - 1], years)
         };
 
-        return { labels: data.labels, data, stats, hasSimulatedData, gpTotalRev: gpCashCollected };
+        return { labels: data.labels, data, stats, hasSimulatedData };
     }
 
     function getStats(start, end, years) {
@@ -910,7 +898,6 @@
         let totalWinPct = 0;
         let totalLossPct = 0;
         let totalOutperfPoints = 0;
-        let totalGpRevenue = 0; 
         
         let downMarketCount = 0;
         let downMarketGsiTotalReturn = 0;
@@ -930,9 +917,6 @@
             let finalNav = blockRes.data.total[blockRes.data.total.length - 1];
             let finalSpy = blockRes.data.indexVal[blockRes.data.indexVal.length - 1];
             
-            let gpRev = blockRes.gpTotalRev;
-            totalGpRevenue += gpRev;
-
             let gsiRet = ((finalNav / startCap) - 1) * 100;
             let spyRet = ((finalSpy / startCap) - 1) * 100;
             
@@ -969,7 +953,6 @@
                 <td style="padding: 10px; color: #64748b;">${rawFmt.format(finalSpy)}</td>
                 <td style="padding: 10px;">${diffStr}</td>
                 <td style="padding: 10px;">${winLoss}</td>
-                <td class="gp-rev-highlight" style="padding: 10px; font-weight: bold;">${rawFmt.format(gpRev)}</td>
             </tr>`;
 
             if (finalSpy < startCap) {
@@ -1044,11 +1027,9 @@
         let avgWinPct = totalWins > 0 ? (totalWinPct / totalWins) : 0;
         let avgLossPct = totalLosses > 0 ? (totalLossPct / totalLosses) : 0;
         let avgOverallOutp = filteredCount > 0 ? (totalOutperfPoints / filteredCount) : 0;
-        let avgGpRev = filteredCount > 0 ? (totalGpRevenue / filteredCount) : 0;
 
         document.getElementById('avgWinPctDisplay').innerText = "+" + avgWinPct.toFixed(1) + "%";
         document.getElementById('avgLossPctDisplay').innerText = avgLossPct.toFixed(1) + "%";
-        document.getElementById('avgGpRevDisplay').innerText = rawFmt.format(avgGpRev);
         
         const avgOverallOutpDisplay = document.getElementById('avgOverallOutperformanceDisplay');
         if (filteredCount > 0) {
@@ -1068,7 +1049,6 @@
         noUiSlider.create(slider, { start: 0, connect: [true, false], range: { 'min': 0, 'max': maxIdx }, step: 1 });
         slider.noUiSlider.on('update', triggerUpdate);
         
-        // Table Year Filter Slider
         let minYear = monthlyData[validStartIndices[0]].year;
         let maxYear = monthlyData[validStartIndices[maxIdx]].year;
         
