@@ -106,7 +106,7 @@
 
     <div id="uploadContainer" class="upload-zone hidden">
         <h2 style="margin: 0 0 10px 0; color: #0f172a;">Awaiting Market Data</h2>
-        <p style="color: #64748b; margin-bottom: 15px;">Please select the <strong>gsi_macro_data_50yr.csv</strong> file to begin.</p>
+        <p style="color: #64748b; margin-bottom: 15px;">Please select the <strong>gsi_macro_data.csv</strong> file to begin.</p>
         <p style="color: #94a3b8; font-size: 0.8rem;">(Auto-load failed due to browser 'file://' security restrictions)</p>
         <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
         <button class="upload-btn" onclick="document.getElementById('csvFileInput').click()">Select CSV File</button>
@@ -506,7 +506,7 @@
 
     // Auto-Load Attempt on Page Load
     window.addEventListener('DOMContentLoaded', () => {
-        fetch('gsi_macro_data_50yr.csv')
+        fetch('gsi_macro_data.csv')
             .then(response => {
                 if (!response.ok) throw new Error("File not found locally or blocked by CORS.");
                 return response.text();
