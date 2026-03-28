@@ -126,6 +126,33 @@
             <span>🟠 Option Budget = Remaining Capital</span>
         </div>
 
+        <div class="metrics" style="grid-template-columns: 1fr 1fr; margin-bottom: 25px;">
+            <div class="metric-box" style="text-align: left; background: #fff; border: 1px solid var(--border); border-top: 4px solid #10b981;">
+                <div class="section-title" style="margin-bottom: 5px; border: none; font-size: 0.85rem; color: #0f172a;">Overall Strategy Performance (All Vintages)</div>
+                <div style="font-size: 0.95rem; font-weight: bold; color: #64748b;">
+                    Win Rate vs SPY: <span id="winRateDisplayTop" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
+                    <span id="winBlendDisplayTop" style="margin-left: 5px;"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.85rem;">
+                    <div><span style="color: #64748b; font-weight: 500;">Avg Gain (Wins):</span> <span id="avgWinPctDisplayTop" style="color: #10b981; font-weight: bold;">--%</span></div>
+                    <div><span style="color: #64748b; font-weight: 500;">Avg Loss (Losses):</span> <span id="avgLossPctDisplayTop" style="color: #f43f5e; font-weight: bold;">--%</span></div>
+                    <div><span style="color: #64748b; font-weight: 500;">Avg Outperformance:</span> <span id="avgOverallOutperformanceDisplayTop" style="color: #10b981; font-weight: bold;">--%</span></div>
+                </div>
+            </div>
+            <div class="metric-box" style="text-align: left; background: #fff; border: 1px solid var(--border); border-top: 4px solid #9f1239;">
+                <div class="section-title" style="margin-bottom: 5px; border: none; font-size: 0.85rem; color: #9f1239;">Stress Tests (When SPY Lost Money)</div>
+                <div style="font-size: 0.95rem; font-weight: bold; color: #9f1239;">
+                    Win Rate vs SPY: <span id="downMarketWinRateDisplayTop" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
+                    <span id="downMarketWinBlendDisplayTop" style="margin-left: 5px;"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.85rem;">
+                    <div><span style="color: #64748b; font-weight: 500;">Avg GSI Return:</span> <span id="avgProtectionReturnDisplayTop" style="color: #10b981; font-weight: bold;">--%</span></div>
+                    <div><span style="color: #64748b; font-weight: 500;">Avg SPY Loss:</span> <span id="avgSpyLossDisplayTop" style="color: #f43f5e; font-weight: bold;">--%</span></div>
+                    <div><span style="color: #64748b; font-weight: 500;">Avg Outperformance:</span> <span id="avgDownOutperformanceDisplayTop" style="color: #10b981; font-weight: bold;">--%</span></div>
+                </div>
+            </div>
+        </div>
+
         <div class="controls-wrapper">
             <div class="controls-grid">
                 <div>
@@ -156,17 +183,17 @@
                     </div>
                     
                     <div class="input-group">
-                        <label>Fund Expenses / Mgmt Fee (on Capital)</label>
-                        <input type="number" id="mgmtFee" value="0.5" step="0.1" min="0" max="5">
+                        <label>Management Fee</label>
+                        <input type="number" id="mgmtFee" value="0" step="0.1" min="0" max="5">
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div class="input-group">
                             <label>Annual MTM Carry</label>
                             <select id="annCarry">
-                                <option value="0" selected>0%</option>
+                                <option value="0">0%</option>
                                 <option value="0.10">10%</option>
                                 <option value="0.15">15%</option>
-                                <option value="0.20">20%</option>
+                                <option value="0.20" selected>20%</option>
                                 <option value="0.25">25%</option>
                                 <option value="0.30">30%</option>
                                 <option value="0.35">35%</option>
@@ -181,9 +208,9 @@
                                 <option value="0">0%</option>
                                 <option value="0.10">10%</option>
                                 <option value="0.15">15%</option>
-                                <option value="0.20" selected>20%</option>
+                                <option value="0.20">20%</option>
                                 <option value="0.25">25%</option>
-                                <option value="0.30">30%</option>
+                                <option value="0.30" selected>30%</option>
                                 <option value="0.35">35%</option>
                                 <option value="0.40">40%</option>
                                 <option value="0.45">45%</option>
@@ -197,7 +224,10 @@
                 </div>
 
                 <div style="grid-column: span 2; background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
-                    <div class="section-title">Day-1 Quantitative Pricing</div>
+                    <div class="section-title flex-between">
+                        <span>Day-1 Quantitative Pricing</span>
+                        <span id="vixGateBadge" style="background: #fef08a; color: #854d0e; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; display: none;">ENTRY DELAYED (VIX &gt; GATE)</span>
+                    </div>
                     
                     <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; text-align: center;">
                         <div>
@@ -228,10 +258,19 @@
 
                     <div class="input-group">
                         <div class="flex-between">
+                            <label>Max Entry VIX (Volatility Gate)</label>
+                            <span id="vixGateDisplay" class="text-blue text-sm font-bold">22 VIX</span>
+                        </div>
+                        <input type="range" id="vixGateSlider" min="10" max="100" value="100" class="range-slider">
+                        <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Delays option execution until the VIX drops below this threshold. Uninvested budget earns credit yield while waiting.</div>
+                    </div>
+
+                    <div class="input-group" style="margin-top: 20px;">
+                        <div class="flex-between">
                             <label>Option Allocation Blend</label>
                             <span id="allocDisplay" class="text-blue text-sm">100% SPX / 0% SPXFP</span>
                         </div>
-                        <input type="range" id="allocSlider" min="0" max="100" value="50" class="range-slider">
+                        <input type="range" id="allocSlider" min="0" max="100" value="10" class="range-slider">
                         <div class="flex-between text-sm" style="color: #64748b; margin-top: 5px;">
                             <span>100% SPX</span>
                             <span>100% SPXFP</span>
@@ -267,7 +306,7 @@
                 <label class="checkbox-lbl"><input type="checkbox" id="showBonds"> Bonds</label>
                 <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;"><input type="checkbox" id="showSofr"> SOFR (Right Axis)</label>
                 <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;">
-                    <input type="checkbox" id="alphaOnlyToggle"> Alpha-Only Carry
+                    <input type="checkbox" id="alphaOnlyToggle" checked> Alpha-Only Carry
                 </label>
             </div>
         </div>
@@ -390,8 +429,10 @@
         <div class="disclaimer-category">Structural & Mathematical Assumptions</div>
         <ul class="disclaimer-list">
             <li><strong>Options Pricing Mechanics:</strong> Option allocations and Mark-to-Market (MTM) values are calculated continuously using the Black-Scholes European Call model. This model intrinsically assumes log-normal price distributions, constant volatility, a constant risk-free rate within the pricing step, and the inability to exercise the option before the 10-year maturity date. </li>
+            <li><strong>Mean-Reverting Volatility Term Structure:</strong> To prevent mathematically irrational Black-Scholes outputs during extreme market panics, the pricing engine utilizes a dynamic square-root mean reverting variance model. It extrapolates the observed 30-Day VIX into a realistic 10-year Implied Volatility, assuming volatility eventually snaps back to the 50-year historical average of 19.5%.</li>
             <li><strong>Zero Trading Friction:</strong> The model assumes zero transaction costs. It does not account for slippage, bid-ask spreads, broker commissions, or the lack of liquidity that often plagues 10-year OTC derivatives. It assumes you can buy the exact calculated fractional amount of exposure at perfectly efficient mid-market prices.</li>
             <li><strong>Liquidity and Deployment Constraints:</strong> The model operates on the theoretical assumption of 100% Day-1 liquidity. It assumes all capital is perfectly deployed into options and the credit floor exactly at the start of the 120-month vintage. It completely ignores capital call mechanics, ramp-up periods, J-curves, lock-ups, or cash drag typical of real-world private market alternative funds.</li>
+            <li><strong>Volatility Gate Execution Delay:</strong> If the Volatility Gate logic is activated and the VIX exceeds the chosen threshold, the engine assumes the Option Budget is held inside the credit floor, compounding at the private credit yield until the first month the VIX falls below the threshold. Upon crossing the threshold, the budget is theoretically fully deployed into a Black-Scholes option priced for the remainder of the 10-year maturity.</li>
             <li><strong>Fee Accounting and Escrow Compounding:</strong> When Annual MTM Carry is enabled, the model employs strict "Source-Based Accounting." Performance fees are immediately subtracted from the interest-bearing credit floor principal to prevent "ghost interest." If the escrow feature is active, siphoned fees are tracked in a separate reserve that assumes perfect reinvestment and compounds continuously at the exact private credit yield, with zero un-invested cash drag.</li>
             <li><strong>Default Risk & Credit Losses:</strong> The modeled private credit yields are assumed to be "Net of Defaults." It assumes either zero defaults, or that the portfolio is so perfectly diversified and structured that the modeled spread fully absorbs and accounts for any underlying loan losses. A real-world concentration of defaults would severely impact the principal protection floor.</li>
             <li><strong>Tax and Regulatory Constraints:</strong> All returns shown are strictly Gross of Investor-Level Taxes. The complex carry structures, high-water marks, options taxation rules (e.g., Section 1256 contracts), and escrow clawbacks do not account for partnership tax accounting, phantom income, or specific regulatory hurdles that would apply to a live structured product.</li>
@@ -403,6 +444,22 @@
 </div>
 
 <script>
+    // --- VIX Term Structure Engine (Mean-Reverting Variance Model) ---
+    const VolatilityEngine = {
+        DEFAULT_LONG_TERM_VIX: 0.195, // 50-year historical average VIX
+        DEFAULT_KAPPA: 2.5,           // Mean reversion speed
+        
+        getTermStructureIV: function(spotVix, yearsToMaturity, kappa = this.DEFAULT_KAPPA, longTermVix = this.DEFAULT_LONG_TERM_VIX) {
+            if (yearsToMaturity <= 0.01) return spotVix / 100.0;
+            const spotVol = spotVix / 100.0;
+            const spotVariance = spotVol * spotVol;
+            const longTermVariance = longTermVix * longTermVix;
+            const reversionFactor = (1.0 - Math.exp(-kappa * yearsToMaturity)) / (kappa * yearsToMaturity);
+            const averageVariance = longTermVariance + ((spotVariance - longTermVariance) * reversionFactor);
+            return Math.sqrt(averageVariance);
+        }
+    };
+
     // --- Black-Scholes Math Engine ---
     function normCdf(x) {
         var t = 1 / (1 + 0.2316419 * Math.abs(x));
@@ -543,7 +600,9 @@
         const mgmtFeePct = parseFloat(document.getElementById('mgmtFee').value) / 100;
         const r10 = md.r10 / 100;
         const q = md.div / 100;
-        const vol = md.vol / 100;
+        
+        // Use the new Term Structure Model instead of raw 30-day VIX
+        const vol = VolatilityEngine.getTermStructureIV(md.vol, 10.0);
 
         const costSpx = bsCall(100.0, 100.0, 10.0, r10, vol, q) / 100;
         const K_fwd = 100.0 * Math.exp((r10 - q) * 10.0);
@@ -581,7 +640,7 @@
             displayedSpread = rawSpread + bcredPremium;       
         }
 
-        return { levSpxFp, levSpx, budgetSpxFp, budgetSpx, initialFloorPct, costSpx, costSpxFp, displayedSpread, vol, r10, totalLev, allocSpx, allocSpxFp, isActualBcred };
+        return { levSpxFp, levSpx, budgetSpxFp, budgetSpx, initialFloorPct, optBudgetPct, costSpx, costSpxFp, displayedSpread, vol, r10, totalLev, allocSpx, allocSpxFp, isActualBcred };
     }
 
    function calculate10YearBlock(startIndex) {
@@ -591,11 +650,14 @@
         const annCarryPct = parseFloat(document.getElementById('annCarry').value);
         const backendCarryPct = parseFloat(document.getElementById('backendCarry').value);
         const isAlphaOnly = document.getElementById('alphaOnlyToggle').checked;
+        const vixGateLimit = parseFloat(document.getElementById('vixGateSlider').value);
 
         const pricing = getOptionPricing(startIndex);
         const startMd = monthlyData[startIndex];
         
         let creditVal = startCap * pricing.initialFloorPct;
+        let optionBudgetVal = startCap * pricing.optBudgetPct; // Initial budget before entry
+        
         let cumSpxOpt = 1.0; 
         let cumSpxIdx = 1.0; 
         let hwm = 0.0; 
@@ -605,14 +667,24 @@
 
         const data = { 
             labels: [startMd.label], total: [startCap], credit: [creditVal], 
-            optionVal: [startCap * (1 - pricing.initialFloorPct)], indexVal: [startCap],
+            optionVal: [optionBudgetVal], indexVal: [startCap],
             bonds: [startCap], pe: [startCap], sofrRates: [startMd.rs],
             spreads: [pricing.displayedSpread * 100]
         };
 
-        const r10_start = startMd.r10 / 100;
-        const q_start = startMd.div / 100;
-        const K_fwd = 100.0 * Math.exp((r10_start - q_start) * 10);
+        // VIX Gate Logic Variables
+        let optionDeployed = startMd.vol <= vixGateLimit;
+        let optLevSpx = 0;
+        let optLevSpxFp = 0;
+        let entrySpxRatio = 1.0;
+        let entryFwdStrike = 100.0;
+        let deploymentData = null; 
+
+        if (optionDeployed) {
+            optLevSpx = pricing.levSpx;
+            optLevSpxFp = pricing.levSpxFp;
+            entryFwdStrike = 100.0 * Math.exp((startMd.r10 / 100 - startMd.div / 100) * 10.0);
+        }
 
         for (let m = 1; m <= 120; m++) {
             let currIndex = startIndex + m;
@@ -630,20 +702,71 @@
             
             creditVal *= (1 + dynamicYield);
             escrowBucket *= (1 + dynamicYield); 
+            
+            let monthlyFee = (startCap * mgmtFeePct) / 12;
+            creditVal -= monthlyFee; // FIX: actually deduct the fee from the pool!
 
             cumSpxOpt *= (1 + md.spxMonthlyRet); 
             cumSpxIdx *= (1 + md.spxMonthlyRet + (md.div / 1200) - (0.0003 / 12)); 
             
-            let rem_T = 10.0 - (m / 12.0);
-            let curr_S = cumSpxOpt * 100.0;
-            let mtmSpx_unit = rem_T > 0 ? bsCall(curr_S, 100.0, rem_T, md.r10/100, md.vol/100, md.div/100) : Math.max(0.0, curr_S - 100.0);
-            let mtmFp_unit = rem_T > 0 ? bsCall(curr_S, K_fwd, rem_T, md.r10/100, md.vol/100, md.div/100) : Math.max(0.0, curr_S - K_fwd);
-            
-            let optValTotal = (pricing.levSpx * mtmSpx_unit + pricing.levSpxFp * mtmFp_unit) * (startCap / 100.0);
-            
-            let monthlyFee = (startCap * mgmtFeePct) / 12;
+            let optValTotal = 0;
 
-            let reportedNAV = (creditVal + optValTotal) - monthlyFee;
+            if (!optionDeployed) {
+                // Budget sits in the credit floor earning yield until VIX drops
+                optionBudgetVal *= (1 + dynamicYield);
+                optValTotal = optionBudgetVal;
+
+                if (md.vol <= vixGateLimit) {
+                    // DEPLOY OPTIONS THIS MONTH
+                    optionDeployed = true;
+                    let rem_T = 10.0 - (m / 12.0);
+                    let r10 = md.r10 / 100; 
+                    let q = md.div / 100; 
+                    
+                    // Term Structure Volatility
+                    let termVol = VolatilityEngine.getTermStructureIV(md.vol, rem_T);
+                    
+                    let costSpx = rem_T > 0 ? bsCall(100.0, 100.0, rem_T, r10, termVol, q) / 100 : 1;
+                    entryFwdStrike = 100.0 * Math.exp((r10 - q) * rem_T);
+                    let costSpxFp = rem_T > 0 ? bsCall(100.0, entryFwdStrike, rem_T, r10, termVol, q) / 100 : 1;
+                    
+                    let allocSpxFp = parseFloat(document.getElementById('allocSlider').value);
+                    let allocSpx = 100 - allocSpxFp;
+                    
+                    let deployedBudgetPct = optionBudgetVal / startCap;
+                    let budgetSpxFp = deployedBudgetPct * (allocSpxFp / 100);
+                    let budgetSpx = deployedBudgetPct * (allocSpx / 100);
+                    
+                    optLevSpxFp = budgetSpxFp > 0 ? (budgetSpxFp / costSpxFp) : 0;
+                    optLevSpx = budgetSpx > 0 ? (budgetSpx / costSpx) : 0;
+                    
+                    entrySpxRatio = cumSpxOpt; // Snapshot the market entry level
+
+                    deploymentData = {
+                        label: md.label,
+                        costSpx: costSpx,
+                        costSpxFp: costSpxFp,
+                        levSpx: optLevSpx,
+                        levSpxFp: optLevSpxFp,
+                        totalLev: optLevSpx + optLevSpxFp
+                    };
+                }
+            } 
+            
+            if (optionDeployed) {
+                let rem_T = 10.0 - (m / 12.0);
+                let curr_S = (cumSpxOpt / entrySpxRatio) * 100.0;
+                
+                // Use Term Structure Volatility for Mark-to-Market pricing
+                let mtm_vol = VolatilityEngine.getTermStructureIV(md.vol, rem_T);
+                
+                let mtmSpx_unit = rem_T > 0 ? bsCall(curr_S, 100.0, rem_T, md.r10/100, mtm_vol, md.div/100) : Math.max(0.0, curr_S - 100.0);
+                let mtmFp_unit = rem_T > 0 ? bsCall(curr_S, entryFwdStrike, rem_T, md.r10/100, mtm_vol, md.div/100) : Math.max(0.0, curr_S - entryFwdStrike);
+                
+                optValTotal = (optLevSpx * mtmSpx_unit + optLevSpxFp * mtmFp_unit) * (startCap / 100.0);
+            }
+            
+            let reportedNAV = creditVal + optValTotal;
 
             if (m % 12 === 0 && annCarryPct > 0) {
                 let spyProfit = (cumSpxIdx - 1) * startCap; 
@@ -659,7 +782,7 @@
                     let toEscrow = totalMtmFee * 0.50; 
                     escrowBucket += toEscrow;
                     
-                    reportedNAV = (creditVal + optValTotal) - monthlyFee;
+                    reportedNAV = creditVal + optValTotal;
                     hwm = reportedNAV - startCap; 
                 }
             }
@@ -715,7 +838,7 @@
             bonds: getStats(startCap, data.bonds[data.bonds.length - 1], years)
         };
 
-        return { labels: data.labels, data, stats, hasSimulatedData };
+        return { labels: data.labels, data, stats, hasSimulatedData, deploymentData };
     }
 
     function getStats(start, end, years) {
@@ -735,6 +858,10 @@
 
         const pricing = getOptionPricing(startIndex);
         
+        const vixGateVal = parseFloat(document.getElementById('vixGateSlider').value);
+        document.getElementById('vixGateDisplay').innerText = vixGateVal === 100 ? '100 (NO GATE)' : vixGateVal + ' VIX';
+        const isGatedDay1 = startMd.vol > vixGateVal;
+        
         if (pricing.isActualBcred) {
             document.getElementById('bcredDataBadge').style.display = 'inline-block';
             document.getElementById('bcredProxyBadge').style.display = 'none';
@@ -748,11 +875,6 @@
         document.getElementById('historicalRateDisplay').innerText = (pricing.r10 * 100).toFixed(1) + "%";
         document.getElementById('floorSizeDisplay').innerText = (pricing.initialFloorPct * 100).toFixed(1) + "%";
         document.getElementById('optionBudgetDisplay').innerText = ((1 - pricing.initialFloorPct) * 100).toFixed(1) + "%";
-        document.getElementById('costSpxFpDisplay').innerText = (pricing.costSpxFp * 100).toFixed(1) + "%";
-        document.getElementById('costSpxDisplay').innerText = (pricing.costSpx * 100).toFixed(1) + "%";
-        document.getElementById('levSpxFpDisplay').innerText = pricing.levSpxFp.toFixed(2) + "x";
-        document.getElementById('levSpxDisplay').innerText = pricing.levSpx.toFixed(2) + "x";
-        document.getElementById('totalLeverageDisplay').innerText = pricing.totalLev.toFixed(2) + "x";
         document.getElementById('allocDisplay').innerText = `${pricing.allocSpx}% SPX / ${pricing.allocSpxFp}% SPXFP`;
 
         const annCarryPct = parseFloat(document.getElementById('annCarry').value);
@@ -769,6 +891,43 @@
 
         const res = calculate10YearBlock(startIndex);
         
+        // --- Dynamic Deployment UI Updates ---
+        if (isGatedDay1) {
+            document.getElementById('vixGateBadge').style.display = 'inline-block';
+            if (res.deploymentData) {
+                document.getElementById('vixGateBadge').innerText = `DELAYED ENTRY: DEPLOYED ${res.deploymentData.label}`;
+                document.getElementById('vixGateBadge').style.background = '#dcfce7'; 
+                document.getElementById('vixGateBadge').style.color = '#166534';
+
+                document.getElementById('costSpxDisplay').innerText = (res.deploymentData.costSpx * 100).toFixed(1) + "%";
+                document.getElementById('costSpxFpDisplay').innerText = (res.deploymentData.costSpxFp * 100).toFixed(1) + "%";
+                document.getElementById('levSpxDisplay').innerText = res.deploymentData.levSpx.toFixed(2) + "x";
+                document.getElementById('levSpxFpDisplay').innerText = res.deploymentData.levSpxFp.toFixed(2) + "x";
+                document.getElementById('totalLeverageDisplay').innerText = res.deploymentData.totalLev.toFixed(2) + "x";
+            } else {
+                document.getElementById('vixGateBadge').innerText = `ENTRY DELAYED (NEVER DEPLOYED)`;
+                document.getElementById('vixGateBadge').style.background = '#fef08a';
+                document.getElementById('vixGateBadge').style.color = '#854d0e';
+
+                document.getElementById('costSpxDisplay').innerText = "-- (GATED)";
+                document.getElementById('costSpxFpDisplay').innerText = "-- (GATED)";
+                document.getElementById('levSpxDisplay').innerText = "--x";
+                document.getElementById('levSpxFpDisplay').innerText = "--x";
+                document.getElementById('totalLeverageDisplay').innerText = "--x";
+            }
+        } else {
+            document.getElementById('vixGateBadge').style.display = 'none';
+            document.getElementById('vixGateBadge').innerText = `ENTRY DELAYED (VIX > GATE)`; 
+            document.getElementById('vixGateBadge').style.background = '#fef08a';
+            document.getElementById('vixGateBadge').style.color = '#854d0e';
+
+            document.getElementById('costSpxFpDisplay').innerText = (pricing.costSpxFp * 100).toFixed(1) + "%";
+            document.getElementById('costSpxDisplay').innerText = (pricing.costSpx * 100).toFixed(1) + "%";
+            document.getElementById('levSpxFpDisplay').innerText = pricing.levSpxFp.toFixed(2) + "x";
+            document.getElementById('levSpxDisplay').innerText = pricing.levSpx.toFixed(2) + "x";
+            document.getElementById('totalLeverageDisplay').innerText = pricing.totalLev.toFixed(2) + "x";
+        }
+
         const simWarning = document.getElementById('simulatedWarning');
         if (res.hasSimulatedData) {
             simWarning.style.display = 'inline-block';
@@ -916,7 +1075,7 @@
             let blockRes = calculate10YearBlock(idx);
             let finalNav = blockRes.data.total[blockRes.data.total.length - 1];
             let finalSpy = blockRes.data.indexVal[blockRes.data.indexVal.length - 1];
-            
+
             let gsiRet = ((finalNav / startCap) - 1) * 100;
             let spyRet = ((finalSpy / startCap) - 1) * 100;
             
@@ -980,7 +1139,7 @@
             }
         }
         
-        masterTableBody.innerHTML = masterHtml;
+        document.getElementById('masterTableBody').innerHTML = masterHtml;
         
         const protectionTableBody = document.getElementById('protectionTableBody');
         if (protectionHtml === "") {
@@ -995,49 +1154,89 @@
         let avgDownOutp = downMarketCount > 0 ? (downMarketTotalOutperf / downMarketCount) : 0;
         
         const downWrDisplay = document.getElementById('downMarketWinRateDisplay');
+        const downWrDisplayTop = document.getElementById('downMarketWinRateDisplayTop');
+        
         if (downMarketCount > 0) {
             downWrDisplay.innerText = downWinRatePct + "%";
+            downWrDisplayTop.innerText = downWinRatePct + "%";
             downWrDisplay.style.color = downWinRatePct > 50 ? '#10b981' : '#f43f5e';
-            document.getElementById('downMarketWinBlendDisplay').innerHTML = `<span class="blend-badge blend-win">Wins: ${downMarketWins}</span><span class="blend-badge blend-loss">Losses: ${downMarketCount - downMarketWins}</span>`;
+            downWrDisplayTop.style.color = downWinRatePct > 50 ? '#10b981' : '#f43f5e';
+            let blendHtml = `<span class="blend-badge blend-win">Wins: ${downMarketWins}</span><span class="blend-badge blend-loss">Losses: ${downMarketCount - downMarketWins}</span>`;
+            document.getElementById('downMarketWinBlendDisplay').innerHTML = blendHtml;
+            document.getElementById('downMarketWinBlendDisplayTop').innerHTML = blendHtml;
         } else {
             downWrDisplay.innerText = "--%";
+            downWrDisplayTop.innerText = "--%";
             document.getElementById('downMarketWinBlendDisplay').innerHTML = "";
+            document.getElementById('downMarketWinBlendDisplayTop').innerHTML = "";
         }
 
-        document.getElementById('avgProtectionReturnDisplay').innerText = (avgDownReturn > 0 ? "+" : "") + avgDownReturn.toFixed(1) + "%";
+        let avgDownRetStr = (avgDownReturn > 0 ? "+" : "") + avgDownReturn.toFixed(1) + "%";
+        document.getElementById('avgProtectionReturnDisplay').innerText = avgDownRetStr;
+        document.getElementById('avgProtectionReturnDisplayTop').innerText = avgDownRetStr;
+        
         document.getElementById('avgSpyLossDisplay').innerText = avgSpyLoss.toFixed(1) + "%";
+        document.getElementById('avgSpyLossDisplayTop').innerText = avgSpyLoss.toFixed(1) + "%";
         
         const avgDownOutpDisplay = document.getElementById('avgDownOutperformanceDisplay');
+        const avgDownOutpDisplayTop = document.getElementById('avgDownOutperformanceDisplayTop');
+        
         if (downMarketCount > 0) {
-            avgDownOutpDisplay.innerText = (avgDownOutp >= 0 ? "+" : "") + avgDownOutp.toFixed(1) + "%";
-            avgDownOutpDisplay.style.color = avgDownOutp >= 0 ? '#10b981' : '#f43f5e';
+            let outTxt = (avgDownOutp >= 0 ? "+" : "") + avgDownOutp.toFixed(1) + "%";
+            let outCol = avgDownOutp >= 0 ? '#10b981' : '#f43f5e';
+            avgDownOutpDisplay.innerText = outTxt;
+            avgDownOutpDisplayTop.innerText = outTxt;
+            avgDownOutpDisplay.style.color = outCol;
+            avgDownOutpDisplayTop.style.color = outCol;
         } else {
             avgDownOutpDisplay.innerText = "--%";
+            avgDownOutpDisplayTop.innerText = "--%";
             avgDownOutpDisplay.style.color = '#64748b';
+            avgDownOutpDisplayTop.style.color = '#64748b';
         }
 
         const winRatePct = filteredCount > 0 ? ((totalWins / filteredCount) * 100).toFixed(1) : 0;
         const wrDisplay = document.getElementById('winRateDisplay');
-        wrDisplay.innerText = filteredCount > 0 ? winRatePct + "%" : "--%";
-        wrDisplay.style.color = winRatePct > 50 ? '#10b981' : '#f43f5e';
+        const wrDisplayTop = document.getElementById('winRateDisplayTop');
         
-        document.getElementById('winBlendDisplay').innerHTML = filteredCount > 0 ? `<span class="blend-badge blend-win">Wins: ${totalWins}</span><span class="blend-badge blend-loss">Losses: ${filteredCount - totalWins}</span>` : "";
+        wrDisplay.innerText = filteredCount > 0 ? winRatePct + "%" : "--%";
+        wrDisplayTop.innerText = filteredCount > 0 ? winRatePct + "%" : "--%";
+        
+        wrDisplay.style.color = winRatePct > 50 ? '#10b981' : '#f43f5e';
+        wrDisplayTop.style.color = winRatePct > 50 ? '#10b981' : '#f43f5e';
+        
+        let winBlendHtml = filteredCount > 0 ? `<span class="blend-badge blend-win">Wins: ${totalWins}</span><span class="blend-badge blend-loss">Losses: ${filteredCount - totalWins}</span>` : "";
+        document.getElementById('winBlendDisplay').innerHTML = winBlendHtml;
+        document.getElementById('winBlendDisplayTop').innerHTML = winBlendHtml;
         
         let totalLosses = filteredCount - totalWins;
         let avgWinPct = totalWins > 0 ? (totalWinPct / totalWins) : 0;
         let avgLossPct = totalLosses > 0 ? (totalLossPct / totalLosses) : 0;
         let avgOverallOutp = filteredCount > 0 ? (totalOutperfPoints / filteredCount) : 0;
 
-        document.getElementById('avgWinPctDisplay').innerText = "+" + avgWinPct.toFixed(1) + "%";
-        document.getElementById('avgLossPctDisplay').innerText = avgLossPct.toFixed(1) + "%";
+        let avgWinStr = "+" + avgWinPct.toFixed(1) + "%";
+        document.getElementById('avgWinPctDisplay').innerText = avgWinStr;
+        document.getElementById('avgWinPctDisplayTop').innerText = avgWinStr;
+        
+        let avgLossStr = avgLossPct.toFixed(1) + "%";
+        document.getElementById('avgLossPctDisplay').innerText = avgLossStr;
+        document.getElementById('avgLossPctDisplayTop').innerText = avgLossStr;
         
         const avgOverallOutpDisplay = document.getElementById('avgOverallOutperformanceDisplay');
+        const avgOverallOutpDisplayTop = document.getElementById('avgOverallOutperformanceDisplayTop');
+        
         if (filteredCount > 0) {
-            avgOverallOutpDisplay.innerText = (avgOverallOutp >= 0 ? "+" : "") + avgOverallOutp.toFixed(1) + "%";
-            avgOverallOutpDisplay.style.color = avgOverallOutp >= 0 ? '#10b981' : '#f43f5e';
+            let ovrTxt = (avgOverallOutp >= 0 ? "+" : "") + avgOverallOutp.toFixed(1) + "%";
+            let ovrCol = avgOverallOutp >= 0 ? '#10b981' : '#f43f5e';
+            avgOverallOutpDisplay.innerText = ovrTxt;
+            avgOverallOutpDisplayTop.innerText = ovrTxt;
+            avgOverallOutpDisplay.style.color = ovrCol;
+            avgOverallOutpDisplayTop.style.color = ovrCol;
         } else {
             avgOverallOutpDisplay.innerText = "--%";
+            avgOverallOutpDisplayTop.innerText = "--%";
             avgOverallOutpDisplay.style.color = '#64748b';
+            avgOverallOutpDisplayTop.style.color = '#64748b';
         }
     }
 
@@ -1067,7 +1266,7 @@
         
         tableSlider.noUiSlider.on('change', triggerUpdate);
 
-        ['startCap', 'mgmtFee', 'annCarry', 'backendCarry', 'allocSlider', 'sizingSpread', 'bcredPremium'].forEach(id => {
+        ['startCap', 'mgmtFee', 'annCarry', 'backendCarry', 'allocSlider', 'sizingSpread', 'bcredPremium', 'vixGateSlider'].forEach(id => {
             document.getElementById(id).addEventListener('input', triggerUpdate);
         });
 
