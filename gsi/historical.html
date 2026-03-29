@@ -1,11 +1,17 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GSI Theoretical Historical Strategy Analysis - 50Y Engine</title>
-    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CVZG5030CZ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-CVZG5030CZ');
+    </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -33,6 +39,14 @@
         .hidden { display: none !important; }
 
         .formula-bar { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 25px; display: flex; justify-content: center; gap: 15px; }
+        
+        /* Collapse Panel Styles */
+        .settings-toggle-btn { background: #f8fafc; color: #1e40af; border: 1px solid #bfdbfe; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 100%; margin-bottom: 15px; font-size: 0.95rem; transition: background 0.2s; }
+        .settings-toggle-btn:hover { background: #eff6ff; }
+        .settings-content { display: none; }
+        .settings-content.open { display: block; animation: slideDown 0.3s ease-out forwards; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
         .controls-wrapper { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 25px; margin-bottom: 25px; }
         .controls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; margin-bottom: 20px; align-items: start; }
         .section-title { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-sub); margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
@@ -154,7 +168,11 @@
             </div>
         </div>
 
-        <div class="controls-wrapper">
+        <button id="toggleSettingsBtn" class="settings-toggle-btn">
+            <span>⚙️ Show Portfolio & Pricing Parameters</span>
+        </button>
+
+        <div id="settingsPanel" class="controls-wrapper settings-content">
             <div class="controls-grid">
                 <div>
                     <div class="section-title">Portfolio Terms</div>
@@ -1273,6 +1291,18 @@
 
         ['showCredit', 'showOption', 'showIndex', 'showPE', 'showBonds', 'showSofr', 'alphaOnlyToggle'].forEach(id => {
             document.getElementById(id).addEventListener('change', triggerUpdate);
+        });
+
+        // Initialize Settings Panel Toggle
+        document.getElementById('toggleSettingsBtn').addEventListener('click', function() {
+            const panel = document.getElementById('settingsPanel');
+            const span = this.querySelector('span');
+            panel.classList.toggle('open');
+            if (panel.classList.contains('open')) {
+                span.innerText = '⚙️ Hide Portfolio & Pricing Parameters';
+            } else {
+                span.innerText = '⚙️ Show Portfolio & Pricing Parameters';
+            }
         });
         
         triggerUpdate();
