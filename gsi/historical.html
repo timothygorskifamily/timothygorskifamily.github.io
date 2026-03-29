@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CVZG5030CZ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-CVZG5030CZ');
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GSI Theoretical Historical Strategy Analysis - 50Y Engine</title>
@@ -85,6 +93,15 @@
         .disclaimer-list { padding-left: 20px; }
         .disclaimer-list li { margin-bottom: 15px; }
         .disclaimer-category { font-weight: 800; color: #1e293b; margin-top: 25px; margin-bottom: 10px; font-size: 0.9rem; text-transform: uppercase; }
+
+        /* Toggle Slider Switch CSS */
+        .toggle-container { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 10px; font-size: 0.85rem; font-weight: bold; color: #64748b; gap: 10px; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider-toggle { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 22px; }
+        .slider-toggle:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider-toggle { background-color: var(--accent); }
+        input:checked + .slider-toggle:before { transform: translateX(18px); }
     </style>
 </head>
 <body>
@@ -101,7 +118,7 @@
 
     <div class="header">
         <div>
-            <h1>Rolling 10-Year Strategy Analysis <span class="badge">Prototype</span></h1>
+            <h1>Rolling 10-Year Strategy Analysis <span class="badge">CSV DATA ENGINE ACTIVE</span></h1>
             <div class="sub">Dynamic Principal Protected Pricing Engine (Monthly 120-Step Engine)</div>
         </div>
         <div><span class="badge" style="background: #f1f5f9; color: #64748b;">Algorithmic Options Pricing</span></div>
@@ -153,7 +170,15 @@
             </div>
         </div>
 
-        <div class="controls-wrapper">
+        <div class="toggle-container">
+            <span>Show Portfolio Controls</span>
+            <label class="switch">
+                <input type="checkbox" id="toggleControlsBtn">
+                <span class="slider-toggle"></span>
+            </label>
+        </div>
+
+        <div class="controls-wrapper" id="mainControlsContainer" style="display: none; opacity: 0; transition: opacity 0.3s ease;">
             <div class="controls-grid">
                 <div>
                     <div class="section-title">Portfolio Terms</div>
@@ -184,22 +209,16 @@
                     
                     <div class="input-group">
                         <label>Management Fee</label>
-                        <input type="number" id="mgmtFee" value="0" step="0.1" min="0" max="5">
+                        <input type="number" id="mgmtFee" value="0.0" step="0.1" min="0" max="5">
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div class="input-group">
                             <label>Annual MTM Carry</label>
                             <select id="annCarry">
-                                <option value="0">0%</option>
+                                <option value="0" selected>0%</option>
                                 <option value="0.10">10%</option>
                                 <option value="0.15">15%</option>
-                                <option value="0.20" selected>20%</option>
-                                <option value="0.25">25%</option>
-                                <option value="0.30">30%</option>
-                                <option value="0.35">35%</option>
-                                <option value="0.40">40%</option>
-                                <option value="0.45">45%</option>
-                                <option value="0.50">50%</option>
+                                <option value="0.20">20%</option>
                             </select>
                         </div>
                         <div class="input-group">
@@ -207,14 +226,7 @@
                             <select id="backendCarry">
                                 <option value="0">0%</option>
                                 <option value="0.10">10%</option>
-                                <option value="0.15">15%</option>
-                                <option value="0.20">20%</option>
-                                <option value="0.25">25%</option>
-                                <option value="0.30" selected>30%</option>
-                                <option value="0.35">35%</option>
-                                <option value="0.40">40%</option>
-                                <option value="0.45">45%</option>
-                                <option value="0.50">50%</option>
+                                <option value="0.20" selected>20%</option>
                             </select>
                         </div>
                     </div>
@@ -261,7 +273,7 @@
                             <label>Max Entry VIX (Volatility Gate)</label>
                             <span id="vixGateDisplay" class="text-blue text-sm font-bold">22 VIX</span>
                         </div>
-                        <input type="range" id="vixGateSlider" min="10" max="100" value="100" class="range-slider">
+                        <input type="range" id="vixGateSlider" min="10" max="100" value="22" class="range-slider">
                         <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Delays option execution until the VIX drops below this threshold. Uninvested budget earns credit yield while waiting.</div>
                     </div>
 
@@ -270,10 +282,10 @@
                             <label>Option Allocation Blend</label>
                             <span id="allocDisplay" class="text-blue text-sm">100% SPX / 0% SPXFP</span>
                         </div>
-                        <input type="range" id="allocSlider" min="0" max="100" value="10" class="range-slider">
+                        <input type="range" id="allocSlider" min="0" max="100" value="0" class="range-slider">
                         <div class="flex-between text-sm" style="color: #64748b; margin-top: 5px;">
-                            <span>100% SPX</span>
-                            <span>100% SPXFP</span>
+                            <span>100% SPX (Spot-Struck / Zero Hurdle)</span>
+                            <span>100% SPXFP (SOFR Hurdle)</span>
                         </div>
                     </div>
 
@@ -306,7 +318,7 @@
                 <label class="checkbox-lbl"><input type="checkbox" id="showBonds"> Bonds</label>
                 <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;"><input type="checkbox" id="showSofr"> SOFR (Right Axis)</label>
                 <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;">
-                    <input type="checkbox" id="alphaOnlyToggle" checked> Alpha-Only Carry
+                    <input type="checkbox" id="alphaOnlyToggle"> Alpha-Only Carry
                 </label>
             </div>
         </div>
@@ -444,6 +456,22 @@
 </div>
 
 <script>
+    // Toggle Controls UI logic
+    const toggleBtn = document.getElementById('toggleControlsBtn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('change', function(e) {
+            const controls = document.getElementById('mainControlsContainer');
+            if(e.target.checked) {
+                controls.style.display = 'block';
+                setTimeout(() => controls.style.opacity = 1, 10);
+            } else {
+                controls.style.opacity = 0;
+                setTimeout(() => controls.style.display = 'none', 300);
+            }
+        });
+    }
+
+
     // --- VIX Term Structure Engine (Mean-Reverting Variance Model) ---
     const VolatilityEngine = {
         DEFAULT_LONG_TERM_VIX: 0.195, // 50-year historical average VIX
@@ -617,7 +645,7 @@
         }
         
         const initialFloorPct = pv_principal + pv_fees;
-        const optBudgetPct = 1.0 - initialFloorPct;
+        const optBudgetPct = Math.max(0, 1.0 - initialFloorPct);
 
         const allocSpxFp = parseFloat(document.getElementById('allocSlider').value);
         const allocSpx = 100 - allocSpxFp;
@@ -656,7 +684,7 @@
         const startMd = monthlyData[startIndex];
         
         let creditVal = startCap * pricing.initialFloorPct;
-        let optionBudgetVal = startCap * pricing.optBudgetPct; // Initial budget before entry
+        let optionBudgetVal = startCap * pricing.optBudgetPct; 
         
         let cumSpxOpt = 1.0; 
         let cumSpxIdx = 1.0; 
@@ -664,13 +692,6 @@
         let escrowBucket = 0.0; 
         
         let hasSimulatedData = startMd.isSimulated;
-
-        const data = { 
-            labels: [startMd.label], total: [startCap], credit: [creditVal], 
-            optionVal: [optionBudgetVal], indexVal: [startCap],
-            bonds: [startCap], pe: [startCap], sofrRates: [startMd.rs],
-            spreads: [pricing.displayedSpread * 100]
-        };
 
         // VIX Gate Logic Variables
         let optionDeployed = startMd.vol <= vixGateLimit;
@@ -680,11 +701,21 @@
         let entryFwdStrike = 100.0;
         let deploymentData = null; 
 
+        let optValTotal = optionBudgetVal;
+
         if (optionDeployed) {
             optLevSpx = pricing.levSpx;
             optLevSpxFp = pricing.levSpxFp;
             entryFwdStrike = 100.0 * Math.exp((startMd.r10 / 100 - startMd.div / 100) * 10.0);
+            optValTotal = optionBudgetVal; // Frictionless theoretical execution
         }
+
+        const data = { 
+            labels: [startMd.label], total: [creditVal + optValTotal], credit: [creditVal], 
+            optionVal: [optValTotal], indexVal: [startCap],
+            bonds: [startCap], pe: [startCap], sofrRates: [startMd.rs],
+            spreads: [pricing.displayedSpread * 100]
+        };
 
         for (let m = 1; m <= 120; m++) {
             let currIndex = startIndex + m;
@@ -704,12 +735,12 @@
             escrowBucket *= (1 + dynamicYield); 
             
             let monthlyFee = (startCap * mgmtFeePct) / 12;
-            creditVal -= monthlyFee; // FIX: actually deduct the fee from the pool!
+            creditVal -= monthlyFee;
 
             cumSpxOpt *= (1 + md.spxMonthlyRet); 
             cumSpxIdx *= (1 + md.spxMonthlyRet + (md.div / 1200) - (0.0003 / 12)); 
             
-            let optValTotal = 0;
+            optValTotal = 0;
 
             if (!optionDeployed) {
                 // Budget sits in the credit floor earning yield until VIX drops
@@ -741,6 +772,7 @@
                     optLevSpx = budgetSpx > 0 ? (budgetSpx / costSpx) : 0;
                     
                     entrySpxRatio = cumSpxOpt; // Snapshot the market entry level
+                    optValTotal = optionBudgetVal; // Theoretical frictionless deployment
 
                     deploymentData = {
                         label: md.label,
@@ -753,7 +785,7 @@
                 }
             } 
             
-            if (optionDeployed) {
+            if (optionDeployed) { 
                 let rem_T = 10.0 - (m / 12.0);
                 let curr_S = (cumSpxOpt / entrySpxRatio) * 100.0;
                 
@@ -1238,6 +1270,21 @@
             avgOverallOutpDisplay.style.color = '#64748b';
             avgOverallOutpDisplayTop.style.color = '#64748b';
         }
+    }
+
+    // Toggle Controls UI logic
+    const toggleBtn = document.getElementById('toggleControlsBtn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('change', function(e) {
+            const controls = document.getElementById('mainControlsContainer');
+            if(e.target.checked) {
+                controls.style.display = 'block';
+                setTimeout(() => controls.style.opacity = 1, 10);
+            } else {
+                controls.style.opacity = 0;
+                setTimeout(() => controls.style.display = 'none', 300);
+            }
+        });
     }
 
     function initDashboard() {
