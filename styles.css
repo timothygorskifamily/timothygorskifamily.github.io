@@ -295,3 +295,17 @@ footer {
   nav ul { flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
   .impact-list { grid-template-columns: 1fr; }
 }
+
+/* Contact Page Profile Image */
+.profile-photo {
+  width: 100%;
+  max-width: 240px; /* Keeps the image from getting too wide */
+  height: 320px;    /* Forces a standard professional portrait height */
+  object-fit: cover;
+  object-position: top center; /* CRITICAL: Anchors the crop to his head/face, not his chest */
+  border-radius: var(--radius-md);
+  border: 4px solid var(--bg-main);
+  box-shadow: var(--shadow-md);
+  margin: 0 auto 1.5rem auto;
+  display: block;
+}
