@@ -149,7 +149,7 @@
             <div class="metric-box" style="text-align: left; background: #fff; border: 1px solid var(--border); border-top: 4px solid #10b981;">
                 <div class="section-title" style="margin-bottom: 5px; border: none; font-size: 0.85rem; color: #0f172a;">Overall Strategy Performance (All Vintages)</div>
                 <div style="font-size: 0.95rem; font-weight: bold; color: #64748b;">
-                    Win Rate vs <span class="benchmark-label">SPY</span>: <span id="winRateDisplayTop" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
+                    Win Rate vs <span class="benchmark-label">SPX</span>: <span id="winRateDisplayTop" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
                     <span id="winBlendDisplayTop" style="margin-left: 5px;"></span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.85rem;">
@@ -159,14 +159,14 @@
                 </div>
             </div>
             <div class="metric-box" style="text-align: left; background: #fff; border: 1px solid var(--border); border-top: 4px solid #9f1239;">
-                <div class="section-title" style="margin-bottom: 5px; border: none; font-size: 0.85rem; color: #9f1239;">Stress Tests (When <span class="benchmark-label">SPY</span> Lost Money)</div>
+                <div class="section-title" style="margin-bottom: 5px; border: none; font-size: 0.85rem; color: #9f1239;">Stress Tests (When <span class="benchmark-label">SPX</span> Lost Money)</div>
                 <div style="font-size: 0.95rem; font-weight: bold; color: #9f1239;">
-                    Win Rate vs <span class="benchmark-label">SPY</span>: <span id="downMarketWinRateDisplayTop" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
+                    Win Rate vs <span class="benchmark-label">SPX</span>: <span id="downMarketWinRateDisplayTop" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
                     <span id="downMarketWinBlendDisplayTop" style="margin-left: 5px;"></span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.85rem;">
                     <div><span style="color: #64748b; font-weight: 500;">Avg GSI Return:</span> <span id="avgProtectionReturnDisplayTop" style="color: #10b981; font-weight: bold;">--%</span></div>
-                    <div><span style="color: #64748b; font-weight: 500;">Avg <span class="benchmark-label">SPY</span> Loss:</span> <span id="avgSpyLossDisplayTop" style="color: #f43f5e; font-weight: bold;">--%</span></div>
+                    <div><span style="color: #64748b; font-weight: 500;">Avg <span class="benchmark-label">SPX</span> Loss:</span> <span id="avgSpyLossDisplayTop" style="color: #f43f5e; font-weight: bold;">--%</span></div>
                     <div><span style="color: #64748b; font-weight: 500;">Avg Outperformance:</span> <span id="avgDownOutperformanceDisplayTop" style="color: #10b981; font-weight: bold;">--%</span></div>
                 </div>
             </div>
@@ -242,7 +242,7 @@
                         </div>
                     </div>
                     <div id="escrowNote" class="escrow-alert">
-                        <strong>🟠 Escrow Compounding Active:</strong> 50% of Annual MTM Carry is set aside as a reserve. This reserve continues to earn the fund's credit yield. If the fund underperforms the selected <span class="benchmark-label">SPY</span> benchmark at Year 10, the bucket is refunded to the LP to bridge the gap.
+                        <strong>🟠 Escrow Compounding Active:</strong> 50% of Annual MTM Carry is set aside as a reserve. This reserve continues to earn the fund's credit yield. If the fund underperforms the selected <span class="benchmark-label">SPX</span> benchmark at Year 10, the bucket is refunded to the LP to bridge the gap.
                     </div>
                 </div>
 
@@ -326,10 +326,10 @@
                 <label class="checkbox-lbl"><input type="checkbox" id="showOption"> Option P&L</label>
                 <div class="benchmark-toggle" role="group" aria-label="Benchmark selector">
                     <span class="benchmark-toggle-label">Benchmark</span>
-                    <button type="button" id="benchmarkSpyBtn" data-benchmark-mode="spy" class="active">SPY</button>
-                    <button type="button" id="benchmarkSpxBtn" data-benchmark-mode="spx">SPX</button>
+                    <button type="button" id="benchmarkSpyBtn" data-benchmark-mode="spy">SPY</button>
+                    <button type="button" id="benchmarkSpxBtn" data-benchmark-mode="spx" class="active">SPX</button>
                 </div>
-                <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;"><input type="checkbox" id="showIndex" checked> <span class="benchmark-name">S&P 500 (SPY)</span></label>
+                <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;"><input type="checkbox" id="showIndex" checked> <span class="benchmark-name">S&P 500 Price (SPX)</span></label>
                 <label class="checkbox-lbl"><input type="checkbox" id="showPE"> Private Equity</label>
                 <label class="checkbox-lbl"><input type="checkbox" id="showBonds"> Bonds</label>
                 <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;"><input type="checkbox" id="showSofr"> SOFR (Right Axis)</label>
@@ -361,8 +361,8 @@
                         <th style="padding: 12px;">Floor Value ($)</th>
                         <th style="padding: 12px;">Option MTM ($)</th>
                         <th style="padding: 12px;">Total NAV ($)</th>
-                        <th style="padding: 12px; border-left: 2px solid #e2e8f0;"><span class="benchmark-label">SPY</span> NAV ($)</th>
-                        <th style="padding: 12px;">vs <span class="benchmark-label">SPY</span> ($ / % Over Benchmark)</th>
+                        <th style="padding: 12px; border-left: 2px solid #e2e8f0;"><span class="benchmark-label">SPX</span> NAV ($)</th>
+                        <th style="padding: 12px;">vs <span class="benchmark-label">SPX</span> ($ / % Over Benchmark)</th>
                     </tr>
                 </thead>
                 <tbody id="yearlyTableBody"></tbody>
@@ -386,11 +386,11 @@
             <div class="section-title" style="margin-bottom: 0; border: none; font-size: 0.9rem; color: #9f1239;">Principal Protection Stress Tests (When S&P 500 Lost Money)</div>
             <div style="text-align: right;">
                 <div style="font-size: 0.95rem; font-weight: bold; color: #9f1239;">
-                    Win Rate vs <span class="benchmark-label">SPY</span> (Down Markets): <span id="downMarketWinRateDisplay" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
+                    Win Rate vs <span class="benchmark-label">SPX</span> (Down Markets): <span id="downMarketWinRateDisplay" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
                     <span id="downMarketWinBlendDisplay" style="margin-left: 5px;"></span>
                 </div>
                 <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 5px;">Avg GSI Return: <span id="avgProtectionReturnDisplay" style="color: #10b981; font-weight: bold; font-size: 1.1rem;">--%</span></div>
-                <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 2px;">Avg <span class="benchmark-label">SPY</span> Loss: <span id="avgSpyLossDisplay" style="color: #f43f5e; font-weight: bold; font-size: 1.1rem;">--%</span></div>
+                <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 2px;">Avg <span class="benchmark-label">SPX</span> Loss: <span id="avgSpyLossDisplay" style="color: #f43f5e; font-weight: bold; font-size: 1.1rem;">--%</span></div>
                 <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 2px;">Avg Outperformance: <span id="avgDownOutperformanceDisplay" style="color: #10b981; font-weight: bold; font-size: 1.1rem;">--%</span></div>
             </div>
         </div>
@@ -399,10 +399,10 @@
                 <thead style="position: sticky; top: 0; background: #fff1f2; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                     <tr>
                         <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">Vintage Start Date</th>
-                        <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;"><span class="benchmark-label">SPY</span> 10-Year Return</th>
+                        <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;"><span class="benchmark-label">SPX</span> 10-Year Return</th>
                         <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">GSI 10-Year Return</th>
                         <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">GSI Final NAV</th>
-                        <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;"><span class="benchmark-label">SPY</span> Final NAV</th>
+                        <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;"><span class="benchmark-label">SPX</span> Final NAV</th>
                         <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">Relative Outperformance</th>
                     </tr>
                 </thead>
@@ -414,7 +414,7 @@
             <div class="section-title" style="margin-bottom: 0; border: none; font-size: 0.9rem;">Historical Summary of All Monthly Rolling Vintages</div>
             <div style="text-align: right;">
                 <div style="font-size: 0.95rem; font-weight: bold; color: #64748b;">
-                    Overall Win Rate vs <span class="benchmark-label">SPY</span>: <span id="winRateDisplay" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
+                    Overall Win Rate vs <span class="benchmark-label">SPX</span>: <span id="winRateDisplay" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
                     <span id="winBlendDisplay" style="margin-left: 5px;"></span>
                 </div>
                 <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 5px;">Avg Gain (When Winning): <span id="avgWinPctDisplay" style="color: #10b981; font-weight: bold; font-size: 1.1rem;">--%</span></div>
@@ -429,9 +429,9 @@
                         <th style="padding: 12px; border-bottom: 1px solid var(--border);">Vintage Start Date</th>
                         <th style="padding: 12px; border-bottom: 1px solid var(--border);">Initial Capital</th>
                         <th style="padding: 12px; border-bottom: 1px solid var(--border);">Final Fund NAV ($)</th>
-                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Final <span class="benchmark-label">SPY</span> NAV ($)</th>
-                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Relative Outperformance vs <span class="benchmark-label">SPY</span></th>
-                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Result vs <span class="benchmark-label">SPY</span></th>
+                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Final <span class="benchmark-label">SPX</span> NAV ($)</th>
+                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Relative Outperformance vs <span class="benchmark-label">SPX</span></th>
+                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Result vs <span class="benchmark-label">SPX</span></th>
                     </tr>
                 </thead>
                 <tbody id="masterTableBody"></tbody>
@@ -513,7 +513,7 @@
     let myChart = null;
     let slider = null;
     let tableSlider = null;
-    let benchmarkMode = 'spy';
+    let benchmarkMode = 'spx';
 
     function getBenchmarkLabel() {
         return benchmarkMode === 'spx' ? 'SPX' : 'SPY';
