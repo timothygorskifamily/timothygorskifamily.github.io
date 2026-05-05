@@ -59,6 +59,10 @@
         
         .toggles { display: flex; gap: 20px; flex-wrap: wrap; padding-top: 15px; border-top: 1px solid var(--border); align-items: center; }
         .checkbox-lbl { font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--primary); }
+        .benchmark-toggle { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border); border-radius: 8px; background: #f8fafc; padding: 4px; }
+        .benchmark-toggle-label { font-size: 0.75rem; font-weight: 800; color: var(--text-sub); text-transform: uppercase; margin-right: 6px; }
+        .benchmark-toggle button { border: 1px solid transparent; border-radius: 5px; background: transparent; color: #334155; padding: 7px 12px; font-size: 0.8rem; font-weight: 800; cursor: pointer; }
+        .benchmark-toggle button.active { border-color: #bfdbfe; background: #dbeafe; color: #1e40af; }
         .chart-section { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 25px; }
         .chart-wrapper { position: relative; height: 500px; width: 100%; }
         
@@ -145,7 +149,7 @@
             <div class="metric-box" style="text-align: left; background: #fff; border: 1px solid var(--border); border-top: 4px solid #10b981;">
                 <div class="section-title" style="margin-bottom: 5px; border: none; font-size: 0.85rem; color: #0f172a;">Overall Strategy Performance (All Vintages)</div>
                 <div style="font-size: 0.95rem; font-weight: bold; color: #64748b;">
-                    Win Rate vs SPY: <span id="winRateDisplayTop" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
+                    Win Rate vs <span class="benchmark-label">SPY</span>: <span id="winRateDisplayTop" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
                     <span id="winBlendDisplayTop" style="margin-left: 5px;"></span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.85rem;">
@@ -155,14 +159,14 @@
                 </div>
             </div>
             <div class="metric-box" style="text-align: left; background: #fff; border: 1px solid var(--border); border-top: 4px solid #9f1239;">
-                <div class="section-title" style="margin-bottom: 5px; border: none; font-size: 0.85rem; color: #9f1239;">Stress Tests (When SPY Lost Money)</div>
+                <div class="section-title" style="margin-bottom: 5px; border: none; font-size: 0.85rem; color: #9f1239;">Stress Tests (When <span class="benchmark-label">SPY</span> Lost Money)</div>
                 <div style="font-size: 0.95rem; font-weight: bold; color: #9f1239;">
-                    Win Rate vs SPY: <span id="downMarketWinRateDisplayTop" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
+                    Win Rate vs <span class="benchmark-label">SPY</span>: <span id="downMarketWinRateDisplayTop" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
                     <span id="downMarketWinBlendDisplayTop" style="margin-left: 5px;"></span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.85rem;">
                     <div><span style="color: #64748b; font-weight: 500;">Avg GSI Return:</span> <span id="avgProtectionReturnDisplayTop" style="color: #10b981; font-weight: bold;">--%</span></div>
-                    <div><span style="color: #64748b; font-weight: 500;">Avg SPY Loss:</span> <span id="avgSpyLossDisplayTop" style="color: #f43f5e; font-weight: bold;">--%</span></div>
+                    <div><span style="color: #64748b; font-weight: 500;">Avg <span class="benchmark-label">SPY</span> Loss:</span> <span id="avgSpyLossDisplayTop" style="color: #f43f5e; font-weight: bold;">--%</span></div>
                     <div><span style="color: #64748b; font-weight: 500;">Avg Outperformance:</span> <span id="avgDownOutperformanceDisplayTop" style="color: #10b981; font-weight: bold;">--%</span></div>
                 </div>
             </div>
@@ -238,7 +242,7 @@
                         </div>
                     </div>
                     <div id="escrowNote" class="escrow-alert">
-                        <strong>🟠 Escrow Compounding Active:</strong> 50% of Annual MTM Carry is set aside as a reserve. This reserve continues to earn the fund's credit yield. If the fund underperforms the SPY at Year 10, the bucket is refunded to the LP to bridge the gap.
+                        <strong>🟠 Escrow Compounding Active:</strong> 50% of Annual MTM Carry is set aside as a reserve. This reserve continues to earn the fund's credit yield. If the fund underperforms the selected <span class="benchmark-label">SPY</span> benchmark at Year 10, the bucket is refunded to the LP to bridge the gap.
                     </div>
                 </div>
 
@@ -320,7 +324,12 @@
                 <strong style="font-size:0.9rem; align-self:center; margin-right:10px;">Display Layers:</strong>
                 <label class="checkbox-lbl"><input type="checkbox" id="showCredit"> Credit Floor</label>
                 <label class="checkbox-lbl"><input type="checkbox" id="showOption"> Option P&L</label>
-                <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;"><input type="checkbox" id="showIndex" checked> S&P 500 (SPY)</label>
+                <div class="benchmark-toggle" role="group" aria-label="Benchmark selector">
+                    <span class="benchmark-toggle-label">Benchmark</span>
+                    <button type="button" id="benchmarkSpyBtn" data-benchmark-mode="spy" class="active">SPY</button>
+                    <button type="button" id="benchmarkSpxBtn" data-benchmark-mode="spx">SPX</button>
+                </div>
+                <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;"><input type="checkbox" id="showIndex" checked> <span class="benchmark-name">S&P 500 (SPY)</span></label>
                 <label class="checkbox-lbl"><input type="checkbox" id="showPE"> Private Equity</label>
                 <label class="checkbox-lbl"><input type="checkbox" id="showBonds"> Bonds</label>
                 <label class="checkbox-lbl" style="border-left:1px solid #e2e8f0; padding-left:15px; margin-left:5px;"><input type="checkbox" id="showSofr"> SOFR (Right Axis)</label>
@@ -352,8 +361,8 @@
                         <th style="padding: 12px;">Floor Value ($)</th>
                         <th style="padding: 12px;">Option MTM ($)</th>
                         <th style="padding: 12px;">Total NAV ($)</th>
-                        <th style="padding: 12px; border-left: 2px solid #e2e8f0;">SPY NAV ($)</th>
-                        <th style="padding: 12px;">vs SPY ($ / % Over Benchmark)</th>
+                        <th style="padding: 12px; border-left: 2px solid #e2e8f0;"><span class="benchmark-label">SPY</span> NAV ($)</th>
+                        <th style="padding: 12px;">vs <span class="benchmark-label">SPY</span> ($ / % Over Benchmark)</th>
                     </tr>
                 </thead>
                 <tbody id="yearlyTableBody"></tbody>
@@ -377,11 +386,11 @@
             <div class="section-title" style="margin-bottom: 0; border: none; font-size: 0.9rem; color: #9f1239;">Principal Protection Stress Tests (When S&P 500 Lost Money)</div>
             <div style="text-align: right;">
                 <div style="font-size: 0.95rem; font-weight: bold; color: #9f1239;">
-                    Win Rate vs SPY (Down Markets): <span id="downMarketWinRateDisplay" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
+                    Win Rate vs <span class="benchmark-label">SPY</span> (Down Markets): <span id="downMarketWinRateDisplay" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
                     <span id="downMarketWinBlendDisplay" style="margin-left: 5px;"></span>
                 </div>
                 <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 5px;">Avg GSI Return: <span id="avgProtectionReturnDisplay" style="color: #10b981; font-weight: bold; font-size: 1.1rem;">--%</span></div>
-                <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 2px;">Avg SPY Loss: <span id="avgSpyLossDisplay" style="color: #f43f5e; font-weight: bold; font-size: 1.1rem;">--%</span></div>
+                <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 2px;">Avg <span class="benchmark-label">SPY</span> Loss: <span id="avgSpyLossDisplay" style="color: #f43f5e; font-weight: bold; font-size: 1.1rem;">--%</span></div>
                 <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 2px;">Avg Outperformance: <span id="avgDownOutperformanceDisplay" style="color: #10b981; font-weight: bold; font-size: 1.1rem;">--%</span></div>
             </div>
         </div>
@@ -390,10 +399,10 @@
                 <thead style="position: sticky; top: 0; background: #fff1f2; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                     <tr>
                         <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">Vintage Start Date</th>
-                        <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">SPY 10-Year Return</th>
+                        <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;"><span class="benchmark-label">SPY</span> 10-Year Return</th>
                         <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">GSI 10-Year Return</th>
                         <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">GSI Final NAV</th>
-                        <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">SPY Final NAV</th>
+                        <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;"><span class="benchmark-label">SPY</span> Final NAV</th>
                         <th style="padding: 12px; border-bottom: 1px solid #fda4af; color: #9f1239;">Relative Outperformance</th>
                     </tr>
                 </thead>
@@ -405,7 +414,7 @@
             <div class="section-title" style="margin-bottom: 0; border: none; font-size: 0.9rem;">Historical Summary of All Monthly Rolling Vintages</div>
             <div style="text-align: right;">
                 <div style="font-size: 0.95rem; font-weight: bold; color: #64748b;">
-                    Overall Win Rate vs SPY: <span id="winRateDisplay" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
+                    Overall Win Rate vs <span class="benchmark-label">SPY</span>: <span id="winRateDisplay" style="color: #10b981; font-size: 1.3rem; margin-left: 5px;">--%</span>
                     <span id="winBlendDisplay" style="margin-left: 5px;"></span>
                 </div>
                 <div style="font-size: 0.85rem; font-weight: 500; color: #64748b; margin-top: 5px;">Avg Gain (When Winning): <span id="avgWinPctDisplay" style="color: #10b981; font-weight: bold; font-size: 1.1rem;">--%</span></div>
@@ -420,9 +429,9 @@
                         <th style="padding: 12px; border-bottom: 1px solid var(--border);">Vintage Start Date</th>
                         <th style="padding: 12px; border-bottom: 1px solid var(--border);">Initial Capital</th>
                         <th style="padding: 12px; border-bottom: 1px solid var(--border);">Final Fund NAV ($)</th>
-                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Final SPY NAV ($)</th>
-                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Relative Outperformance vs SPY</th>
-                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Result vs SPY</th>
+                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Final <span class="benchmark-label">SPY</span> NAV ($)</th>
+                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Relative Outperformance vs <span class="benchmark-label">SPY</span></th>
+                        <th style="padding: 12px; border-bottom: 1px solid var(--border);">Result vs <span class="benchmark-label">SPY</span></th>
                     </tr>
                 </thead>
                 <tbody id="masterTableBody"></tbody>
@@ -437,7 +446,7 @@
         
         <div class="disclaimer-category">Data Sources & Benchmark Proxies</div>
         <ul class="disclaimer-list">
-            <li><strong>S&P 500 Data (SPY):</strong> Equity returns are modeled using the S&P 500 Total Return Index (inclusive of perfectly reinvested dividends), proxied via SPY ETF data or interpolated historical index data prior to ETF inception. It assumes zero tax friction on dividend reinvestment.</li>
+            <li><strong>S&P 500 Benchmark Data (SPX/SPY):</strong> The SPX toggle uses S&P 500 price-index returns without dividends. The SPY toggle uses a reconstructed total-return style benchmark with dividend reinvestment and a small ETF tracking-drag assumption.</li>
             <li><strong>Risk-Free Rates & Short Rates:</strong> The 10-Year Treasury Constant Maturity rate (via St. Louis Fed / FRED) is used to calculate the option budget and forward pricing. The Secured Overnight Financing Rate (SOFR) is used as the base floating crediting rate. For historical periods before SOFR's publication (2018), 3-Month US Treasury Bill yields or Federal Funds rates are used as backward-calculated proxies.</li>
             <li><strong>Private Credit Spreads:</strong> Because granular, standardized private credit data does not exist spanning 50 years, the engine utilizes the ICE BofA US High Yield Index Option-Adjusted Spread (OAS) as a base. It applies a dynamic, user-defined "Illiquidity/Complexity Premium" (e.g., 2.5% to 3.5%) to proxy direct lending returns. It also assumes volatility dampening compared to public high yield, capturing only 40% of extreme public spread blowouts.</li>
             <li><strong>Private Equity Benchmark (PE):</strong> Private Equity returns are modeled using a static historical array intended to proxy average annual US Buyout fund performance (e.g., Cambridge Associates US Private Equity Index equivalents). PE data is inherently subject to appraisal smoothing, survivorship bias, and reporting lags. The model mathematically applies a strict "1.5 and 20" fee structure (1.5% annual management fee deducted monthly, 20% performance carry on profits over principal at Year 10) to simulate net-to-LP returns.</li>
@@ -504,6 +513,31 @@
     let myChart = null;
     let slider = null;
     let tableSlider = null;
+    let benchmarkMode = 'spy';
+
+    function getBenchmarkLabel() {
+        return benchmarkMode === 'spx' ? 'SPX' : 'SPY';
+    }
+
+    function getBenchmarkName() {
+        return benchmarkMode === 'spx' ? 'S&P 500 Price (SPX)' : 'S&P 500 Total Return Proxy (SPY)';
+    }
+
+    function getBenchmarkMonthlyMultiplier(md) {
+        return benchmarkMode === 'spx'
+            ? (1 + md.spxMonthlyRet)
+            : (1 + md.spxMonthlyRet + (md.div / 1200) - (0.0003 / 12));
+    }
+
+    function updateBenchmarkLabels() {
+        const label = getBenchmarkLabel();
+        const name = getBenchmarkName();
+        document.querySelectorAll('.benchmark-label').forEach(el => { el.innerText = label; });
+        document.querySelectorAll('.benchmark-name').forEach(el => { el.innerText = name; });
+        document.querySelectorAll('[data-benchmark-mode]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.benchmarkMode === benchmarkMode);
+        });
+    }
 
     // --- CSV PARSING ENGINE ---
     function processCSVData(results) {
@@ -585,6 +619,7 @@
 
     // Auto-Load Attempt on Page Load
     window.addEventListener('DOMContentLoaded', () => {
+        updateBenchmarkLabels();
         fetch('gsi_macro_data_50yr.csv')
             .then(response => {
                 if (!response.ok) throw new Error("File not found locally or blocked by CORS.");
@@ -605,6 +640,14 @@
         const file = e.target.files[0];
         if (!file) return;
         Papa.parse(file, { header: true, dynamicTyping: true, skipEmptyLines: true, complete: processCSVData });
+    });
+
+    document.querySelectorAll('[data-benchmark-mode]').forEach(button => {
+        button.addEventListener('click', () => {
+            benchmarkMode = button.dataset.benchmarkMode === 'spx' ? 'spx' : 'spy';
+            updateBenchmarkLabels();
+            triggerUpdate();
+        });
     });
 
     function jumpToVintage(idx) {
@@ -726,7 +769,7 @@
             creditVal -= monthlyFee; // FIX: actually deduct the fee from the pool!
 
             cumSpxOpt *= (1 + md.spxMonthlyRet); 
-            cumSpxIdx *= (1 + md.spxMonthlyRet + (md.div / 1200) - (0.0003 / 12)); 
+            cumSpxIdx *= getBenchmarkMonthlyMultiplier(md); 
             
             let optValTotal = 0;
 
@@ -788,8 +831,8 @@
             let reportedNAV = creditVal + optValTotal;
 
             if (m % 12 === 0 && annCarryPct > 0) {
-                let spyProfit = (cumSpxIdx - 1) * startCap; 
-                let effectiveHurdle = isAlphaOnly ? Math.max(hwm, spyProfit) : hwm;
+                let benchmarkProfit = (cumSpxIdx - 1) * startCap; 
+                let effectiveHurdle = isAlphaOnly ? Math.max(hwm, benchmarkProfit) : hwm;
                 let currentProfit = reportedNAV - startCap;
 
                 if (currentProfit > effectiveHurdle) {
@@ -807,10 +850,10 @@
             }
 
             if (m === 120) {
-                let finalSpyValue = cumSpxIdx * startCap;
+                let finalBenchmarkValue = cumSpxIdx * startCap;
                 
-                if (reportedNAV < finalSpyValue && escrowBucket > 0) {
-                    let shortfall = finalSpyValue - reportedNAV;
+                if (reportedNAV < finalBenchmarkValue && escrowBucket > 0) {
+                    let shortfall = finalBenchmarkValue - reportedNAV;
                     let refundToLP = Math.min(shortfall, escrowBucket);
                     reportedNAV += refundToLP;
                     escrowBucket -= refundToLP;
@@ -818,7 +861,7 @@
                 
                 if (backendCarryPct > 0) {
                     let backendHurdle = isAlphaOnly 
-                        ? Math.max(startCap + hwm, finalSpyValue) 
+                        ? Math.max(startCap + hwm, finalBenchmarkValue) 
                         : (startCap + hwm);
                     
                     if (reportedNAV > backendHurdle) {
@@ -908,6 +951,10 @@
             alertBox.style.display = 'none';
         }
 
+        if (annCarryPct > 0) {
+            alertBox.innerHTML = alertBox.innerHTML.replaceAll('SPY', getBenchmarkLabel());
+        }
+
         const res = calculate10YearBlock(startIndex);
         
         // --- Dynamic Deployment UI Updates ---
@@ -955,7 +1002,7 @@
         }
 
         const ctx = document.getElementById('mainChart').getContext('2d');
-        const idxName = 'S&P 500 (SPY)';
+        const idxName = getBenchmarkName();
         
         const datasets = [];
         const lbl = (name, s) => `${name} (Cumul: ${s.cumul.toFixed(0)}%)`;
@@ -1162,7 +1209,7 @@
         
         const protectionTableBody = document.getElementById('protectionTableBody');
         if (protectionHtml === "") {
-            protectionTableBody.innerHTML = `<tr><td colspan="6" style="padding: 15px; text-align: center; color: #64748b; font-weight: bold;">No 10-year periods with negative SPY returns found in the selected range.</td></tr>`;
+            protectionTableBody.innerHTML = `<tr><td colspan="6" style="padding: 15px; text-align: center; color: #64748b; font-weight: bold;">No 10-year periods with negative ${getBenchmarkLabel()} returns found in the selected range.</td></tr>`;
         } else {
             protectionTableBody.innerHTML = protectionHtml;
         }
