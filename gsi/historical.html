@@ -215,8 +215,8 @@
                             <select id="annCarry">
                                 <option value="0">0%</option>
                                 <option value="0.10">10%</option>
-                                <option value="0.15">15%</option>
-                                <option value="0.20" selected>20%</option>
+                                <option value="0.15" selected>15%</option>
+                                <option value="0.20">20%</option>
                                 <option value="0.25">25%</option>
                                 <option value="0.30">30%</option>
                                 <option value="0.35">35%</option>
@@ -233,8 +233,8 @@
                                 <option value="0.15">15%</option>
                                 <option value="0.20">20%</option>
                                 <option value="0.25">25%</option>
-                                <option value="0.30" selected>30%</option>
-                                <option value="0.35">35%</option>
+                                <option value="0.30">30%</option>
+                                <option value="0.35" selected>35%</option>
                                 <option value="0.40">40%</option>
                                 <option value="0.45">45%</option>
                                 <option value="0.50">50%</option>
@@ -293,7 +293,7 @@
                             <label>Option Allocation Blend</label>
                             <span id="allocDisplay" class="text-blue text-sm">100% SPX / 0% SPXFP</span>
                         </div>
-                        <input type="range" id="allocSlider" min="0" max="100" value="10" class="range-slider">
+                        <input type="range" id="allocSlider" min="0" max="100" value="0" class="range-slider">
                         <div class="flex-between text-sm" style="color: #64748b; margin-top: 5px;">
                             <span>100% SPX</span>
                             <span>100% SPXFP</span>
@@ -446,12 +446,13 @@
         
         <div class="disclaimer-category">Data Sources & Benchmark Proxies</div>
         <ul class="disclaimer-list">
-            <li><strong>S&P 500 Benchmark Data (SPX/SPY):</strong> The SPX toggle uses S&P 500 price-index returns without dividends. The SPY toggle uses a reconstructed total-return style benchmark with dividend reinvestment and a small ETF tracking-drag assumption.</li>
+            <li><strong>CSV Source Labels:</strong> The root CSV includes per-field source columns such as <code>VIX_Source</code>, <code>HY_Spread_Source</code>, <code>Dividend_Source</code>, and <code>BCRED_Source</code>. These labels distinguish sourced observations from proxy assumptions; a row-level <code>Is_Simulated</code> flag is not precise enough on its own.</li>
+            <li><strong>S&P 500 Benchmark Data (SPX/SPY):</strong> The SPX toggle uses S&P 500 price-index returns without dividends. The SPY toggle uses monthly dividend-return data from the CSV's <code>Monthly_Dividend_Return</code> field plus a small ETF tracking-drag assumption. Where dividend return is unavailable, the page falls back to the CSV's dividend-yield field.</li>
             <li><strong>Risk-Free Rates & Short Rates:</strong> The 10-Year Treasury Constant Maturity rate (via St. Louis Fed / FRED) is used to calculate the option budget and forward pricing. The Secured Overnight Financing Rate (SOFR) is used as the base floating crediting rate. For historical periods before SOFR's publication (2018), 3-Month US Treasury Bill yields or Federal Funds rates are used as backward-calculated proxies.</li>
-            <li><strong>Private Credit Spreads:</strong> Because granular, standardized private credit data does not exist spanning 50 years, the engine utilizes the ICE BofA US High Yield Index Option-Adjusted Spread (OAS) as a base. It applies a dynamic, user-defined "Illiquidity/Complexity Premium" (e.g., 2.5% to 3.5%) to proxy direct lending returns. It also assumes volatility dampening compared to public high yield, capturing only 40% of extreme public spread blowouts.</li>
+            <li><strong>Credit / Private Credit Inputs:</strong> BCRED Class I monthly returns are used directly where the CSV has <code>BCRED_Monthly_Return</code>, beginning in 2021. Earlier credit returns remain a proxy: true ICE BofA US High Yield OAS is used where available, otherwise Moody's Baa spread plus a 2.50% junk-spread uplift is used and should not be described as official high-yield or private-credit history. The user-selected private-credit premium is only applied to proxy months.</li>
             <li><strong>Private Equity Benchmark (PE):</strong> Private Equity returns are modeled using a static historical array intended to proxy average annual US Buyout fund performance (e.g., Cambridge Associates US Private Equity Index equivalents). PE data is inherently subject to appraisal smoothing, survivorship bias, and reporting lags. The model mathematically applies a strict "1.5 and 20" fee structure (1.5% annual management fee deducted monthly, 20% performance carry on profits over principal at Year 10) to simulate net-to-LP returns.</li>
             <li><strong>Core Bonds Benchmark:</strong> Bond benchmark returns are modeled using a static historical array proxying the Bloomberg US Aggregate Bond Index (or similar core aggregate indices). The model assumes a pure buy-and-hold total return with perfectly reinvested coupon payments and assumes 0% management fees or transaction costs for the bond benchmark.</li>
-            <li><strong>Volatility Data (VIX):</strong> Options are priced using historical implied volatility, proxied by the CBOE Volatility Index (VIX) where available. For periods predating the inception of the VIX (pre-1990), historical realized volatility metrics and simulated flat-vol proxies are used to estimate pricing parameters.</li>
+            <li><strong>Volatility Data (VIX):</strong> Options are priced using Cboe VIX month-end data from 1990 onward, Cboe VXO old-methodology month-end data for 1986-1989, and a Shiller realized-volatility proxy before 1986. Pre-1990 values are not live SPX option-implied VIX observations.</li>
         </ul>
 
         <div class="disclaimer-category">Structural & Mathematical Assumptions</div>
@@ -524,9 +525,31 @@
     }
 
     function getBenchmarkMonthlyMultiplier(md) {
+        const dividendReturn = Number.isFinite(md.monthlyDividendReturn) ? md.monthlyDividendReturn : (md.div / 1200);
         return benchmarkMode === 'spx'
             ? (1 + md.spxMonthlyRet)
-            : (1 + md.spxMonthlyRet + (md.div / 1200) - (0.0003 / 12));
+            : (1 + md.spxMonthlyRet) * (1 + dividendReturn) * (1 - (0.0003 / 12));
+    }
+
+    function getCreditReturnInput(md, bcredPremium) {
+        if (Number.isFinite(md.bcredMonthlyReturn)) {
+            const annualizedReturn = Math.pow(1 + md.bcredMonthlyReturn, 12) - 1;
+            const impliedSpread = Math.max(0, annualizedReturn - (md.rs / 100));
+            return {
+                monthlyReturn: md.bcredMonthlyReturn,
+                displayedSpread: impliedSpread,
+                isActualBcred: true
+            };
+        }
+
+        const spread = (md.bcredSpread !== null && md.bcredSpread !== undefined && md.bcredSpread !== "")
+            ? md.bcredSpread / 100
+            : (md.spread / 100 + bcredPremium) + ((md.spread / 100 - 0.045) * 0.40);
+        return {
+            monthlyReturn: ((md.rs / 100) + spread) / 12,
+            displayedSpread: spread,
+            isActualBcred: false
+        };
     }
 
     function updateBenchmarkLabels() {
@@ -574,6 +597,21 @@
             if (row.BCRED_Spread !== undefined && row.BCRED_Spread !== null && row.BCRED_Spread !== "") {
                 actualBcredSpread = parseFloat(row.BCRED_Spread);
             }
+
+            let actualBcredMonthlyReturn = null;
+            if (row.BCRED_Monthly_Return !== undefined && row.BCRED_Monthly_Return !== null && row.BCRED_Monthly_Return !== "") {
+                actualBcredMonthlyReturn = parseFloat(row.BCRED_Monthly_Return);
+            }
+
+            let dividendYield = 1.5;
+            if (row.Dividend_Yield !== undefined && row.Dividend_Yield !== null && row.Dividend_Yield !== "") {
+                dividendYield = parseFloat(row.Dividend_Yield);
+            }
+
+            let monthlyDividendReturn = null;
+            if (row.Monthly_Dividend_Return !== undefined && row.Monthly_Dividend_Return !== null && row.Monthly_Dividend_Return !== "") {
+                monthlyDividendReturn = parseFloat(row.Monthly_Dividend_Return);
+            }
             
             let isSimulated = false;
             if (row.Is_Simulated !== undefined && (row.Is_Simulated === 'TRUE' || row.Is_Simulated === true)) {
@@ -588,8 +626,14 @@
                 vol: row.VIX, 
                 spread: row.HY_Spread, 
                 bcredSpread: actualBcredSpread,
+                bcredMonthlyReturn: actualBcredMonthlyReturn,
                 isSimulated: isSimulated,
-                div: 1.5, 
+                div: dividendYield,
+                monthlyDividendReturn: monthlyDividendReturn,
+                vixSource: row.VIX_Source || '',
+                hySource: row.HY_Spread_Source || '',
+                dividendSource: row.Dividend_Source || '',
+                bcredSource: row.BCRED_Source || '',
                 spxMonthlyRet: spxMonthlyRet,
                 peMonthlyRet: peMonthlyRet,
                 bondMonthlyRet: bondMonthlyRet,
@@ -694,7 +738,11 @@
         let displayedSpread;
         let isActualBcred = false;
 
-        if (md && md.bcredSpread !== null && md.bcredSpread !== undefined && md.bcredSpread !== "") {
+        if (md && Number.isFinite(md.bcredMonthlyReturn)) {
+            const annualizedReturn = Math.pow(1 + md.bcredMonthlyReturn, 12) - 1;
+            displayedSpread = Math.max(0, annualizedReturn - (md.rs / 100));
+            isActualBcred = true;
+        } else if (md && md.bcredSpread !== null && md.bcredSpread !== undefined && md.bcredSpread !== "") {
             displayedSpread = md.bcredSpread / 100;
             isActualBcred = true;
         } else {
@@ -755,12 +803,9 @@
             
             if (md.isSimulated === true) hasSimulatedData = true;
 
-            let currentSpread = (md.bcredSpread !== null && md.bcredSpread !== undefined && md.bcredSpread !== "") 
-                                ? md.bcredSpread / 100 
-                                : (md.spread / 100 + bcredPremium) + ((md.spread / 100 - 0.045) * 0.40);
-
-            let shortRate = md.rs / 100;
-            let dynamicYield = (shortRate + currentSpread) / 12;
+            const creditInput = getCreditReturnInput(md, bcredPremium);
+            let currentSpread = creditInput.displayedSpread;
+            let dynamicYield = creditInput.monthlyReturn;
             
             creditVal *= (1 + dynamicYield);
             escrowBucket *= (1 + dynamicYield); 
