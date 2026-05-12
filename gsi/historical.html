@@ -379,7 +379,7 @@
                     <div class="section-title" style="margin: 0; border: none; font-size: 0.9rem; color: var(--primary);">Filter Summary Tables by Vintage Year</div>
                     <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Adjust the range below to view strategy performance across specific economic periods.</div>
                 </div>
-                <div id="tableYearRangeDisplay" style="font-size: 1.2rem; font-weight: 800; color: var(--accent);">1934 - 2023</div>
+                <div id="tableYearRangeDisplay" style="font-size: 1.2rem; font-weight: 800; color: var(--accent);">1940 - 2013</div>
             </div>
             <div id="tableYearSlider" style="margin: 10px 10px 0 10px;"></div>
         </div>
@@ -450,11 +450,21 @@
         <ul class="disclaimer-list">
             <li><strong>CSV Source Labels:</strong> The root CSV includes per-field source columns such as <code>VIX_Source</code>, <code>HY_Spread_Source</code>, <code>Dividend_Source</code>, and <code>BCRED_Source</code>. These labels distinguish sourced observations from proxy assumptions; a row-level <code>Is_Simulated</code> flag is not precise enough on its own.</li>
             <li><strong>Index Benchmark Data (SPX/SPX100/NASDAQ/SPY):</strong> The SPX toggle uses S&P 500 price-index returns without dividends. The SPX100 toggle uses bundled S&P 100/OEX monthly price-index closes where available, and the NASDAQ toggle uses NASDAQ-100/NDX monthly price-index closes where available. Missing older rows fall back to SPX returns. The SPY toggle uses monthly dividend-return data from the CSV's <code>Monthly_Dividend_Return</code> field plus a small ETF tracking-drag assumption.</li>
-            <li><strong>Risk-Free Rates & Short Rates:</strong> The 10-Year Treasury Constant Maturity rate (via St. Louis Fed / FRED) is used to calculate the option budget and forward pricing. The Secured Overnight Financing Rate (SOFR) is used as the base floating crediting rate. For historical periods before SOFR's publication (2018), 3-Month US Treasury Bill yields or Federal Funds rates are used as backward-calculated proxies.</li>
+            <li><strong>Risk-Free Rates & Short Rates:</strong> The 10-Year Treasury Constant Maturity rate (via St. Louis Fed / FRED) is used where available to calculate the option budget and forward pricing. Before official DGS10 coverage, the CSV uses its source-labeled long-rate proxy. The Secured Overnight Financing Rate (SOFR) is used as the base floating crediting rate from 2018 onward; earlier rows use 3-Month US Treasury Bill yields or source-labeled short-rate proxies.</li>
             <li><strong>Credit / Private Credit Inputs:</strong> BCRED Class I monthly returns are used directly where the CSV has <code>BCRED_Monthly_Return</code>, beginning in 2021. Earlier credit returns remain a proxy: true ICE BofA US High Yield OAS is used where available, otherwise Moody's Baa spread plus a 2.50% junk-spread uplift is used and should not be described as official high-yield or private-credit history. The user-selected private-credit premium is only applied to proxy months.</li>
             <li><strong>Private Equity Benchmark (PE):</strong> Private Equity returns are modeled using a static historical array intended to proxy average annual US Buyout fund performance (e.g., Cambridge Associates US Private Equity Index equivalents). PE data is inherently subject to appraisal smoothing, survivorship bias, and reporting lags. The model mathematically applies a strict "1.5 and 20" fee structure (1.5% annual management fee deducted monthly, 20% performance carry on profits over principal at Year 10) to simulate net-to-LP returns.</li>
-            <li><strong>Core Bonds Benchmark:</strong> Bond benchmark returns are modeled using a static historical array proxying the Bloomberg US Aggregate Bond Index (or similar core aggregate indices). The model assumes a pure buy-and-hold total return with perfectly reinvested coupon payments and assumes 0% management fees or transaction costs for the bond benchmark.</li>
+            <li><strong>Core Bonds Benchmark:</strong> Bond benchmark returns use the CSV's <code>Bond_Monthly_Return</code> where available, including public FRED/Nasdaq OMRX Treasury Bond Index history. Missing older rows fall back to the legacy static bond-return proxy array. The model assumes a pure buy-and-hold total return with perfectly reinvested coupon payments and assumes 0% management fees or transaction costs for the bond benchmark.</li>
             <li><strong>Volatility Data:</strong> SPX/SPY options use VIX, SPX100 options use VXO where available, and NASDAQ options use VXN where available. Missing older rows fall back to the SPX/VIX proxy.</li>
+        </ul>
+
+        <div class="disclaimer-category">1934 Extension & Licensed Data Gaps</div>
+        <ul class="disclaimer-list">
+            <li><strong>Pre-1974 SPX Extension:</strong> 1934-1973 S&P price and dividend history uses public Robert Shiller S&P Composite data scaled into the local SPX price history. This is a public proxy, not official licensed S&P DJI index history.</li>
+            <li><strong>S&P 500 Total Return:</strong> SPY-style total return is reconstructed from public price returns, Shiller monthly dividend cash returns, and a tracking-drag assumption. It is not the official S&P 500 Total Return Index.</li>
+            <li><strong>Pre-1986 Volatility:</strong> Official VIX begins in 1990 and Cboe VXO old-methodology history begins earlier but not back to 1934. Rows before option-volatility coverage use a Shiller realized-volatility proxy and are source-labeled accordingly.</li>
+            <li><strong>SPX100 and NASDAQ History:</strong> Public OEX/SPX100 and NDX/NASDAQ-100 histories do not cover the full 1934 window. Older rows fall back to SPX price returns and VIX-style volatility proxies.</li>
+            <li><strong>Credit and Private-Credit History:</strong> Full older high-yield OAS, leveraged-loan, and private-credit benchmark histories require licensed data. BCRED did not exist before 2021, so earlier private-credit behavior is modeled from the credit proxy plus user-selected premium.</li>
+            <li><strong>Private Equity and Bond Benchmarks:</strong> Official private-equity benchmarks and full-window Bloomberg/S&P bond benchmark histories generally require licensed feeds. Public bond rows are used where bundled; missing rows remain proxy assumptions.</li>
         </ul>
 
         <div class="disclaimer-category">Structural & Mathematical Assumptions</div>
@@ -1332,7 +1342,7 @@
         }
         tableBody.innerHTML = tableHtml;
 
-        const fallbackStartYear = monthlyData.length > 0 ? monthlyData[0].year : 1940;
+        const fallbackStartYear = monthlyData.length > 0 ? monthlyData[0].year : 1934;
         const fallbackEndYear = validStartIndices.length > 0
             ? monthlyData[validStartIndices[validStartIndices.length - 1]].year
             : fallbackStartYear;
@@ -1532,18 +1542,20 @@
 
     function initDashboard() {
         let maxIdx = validStartIndices[validStartIndices.length - 1];
+        const defaultStartIdx = validStartIndices.find(idx => monthlyData[idx].year >= 1940) ?? validStartIndices[0];
         
         // Main Chart Slider
         slider = document.getElementById('dateSlider');
-        noUiSlider.create(slider, { start: 0, connect: [true, false], range: { 'min': 0, 'max': maxIdx }, step: 1 });
+        noUiSlider.create(slider, { start: defaultStartIdx, connect: [true, false], range: { 'min': 0, 'max': maxIdx }, step: 1 });
         slider.noUiSlider.on('update', triggerUpdate);
         
         let minYear = monthlyData[validStartIndices[0]].year;
         let maxYear = monthlyData[maxIdx].year;
+        let defaultTableStartYear = Math.min(Math.max(1940, minYear), maxYear);
         
         tableSlider = document.getElementById('tableYearSlider');
         noUiSlider.create(tableSlider, {
-            start: [minYear, maxYear],
+            start: [defaultTableStartYear, maxYear],
             connect: true,
             range: { 'min': minYear, 'max': maxYear },
             step: 1,
